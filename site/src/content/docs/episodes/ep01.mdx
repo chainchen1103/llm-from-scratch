@@ -1,0 +1,718 @@
+---
+title: EP01｜開發環境與 NumPy 入門
+description: 把電腦變成能跑深度學習的工作站，再學會用「形狀」思考資料：NumPy 陣列、axis、廣播，最後從零寫出數值穩定的 Softmax。
+sidebar:
+  label: EP01 開發環境與 NumPy
+  order: 2
+---
+
+import { Aside, LinkButton } from '@astrojs/starlight/components';
+import AxisDemo from '../../../components/AxisDemo.tsx';
+import BroadcastDemo from '../../../components/BroadcastDemo.tsx';
+import SoftmaxDemo from '../../../components/SoftmaxDemo.tsx';
+
+<Aside type="note" title="影片">
+本集影片製作中，完成後會放在這裡。
+</Aside>
+
+## 這集要解決什麼問題
+
+EP00 看到了很多「形狀」：「今天天氣很」切成 4 個 token，每個 token 是長 896 的向量，所以殘差流的形狀是 `(1, 4, 896)`；最後模型替大約 15 萬個 token 打分數，再用 Softmax 換成 15 萬個機率。
+
+接下來 60 集，我們要自己把這些東西算出來。所以這集做兩件事：
+
+1. **把電腦變成能跑深度學習的工作站**：之後每一集的程式都在這個環境裡寫、跑、測試。
+2. **學會用形狀思考資料**：用 NumPy 操作陣列，最後從零寫出 EP00 用到的 Softmax。
+
+學完這集，你應該能：
+
+- 在 Windows 上用 WSL2 跑 Linux，並用 VS Code 在裡面寫程式。
+- 用 `uv` 建立 Python 專案、安裝套件、執行程式與測試。
+- 說出一個陣列的 `shape`、`dtype`、`ndim`，並用索引、切片、`reshape` 操作它。
+- 解釋 `axis` 參數的意思。
+- 用自己的話說明**廣播 broadcasting** 的規則，並舉出一個它「悄悄算錯」的例子。
+- 從零寫出**數值穩定**的 Softmax，並通過測試。
+
+## 第一部分：建置開發環境
+
+### 為什麼不一直用 Colab？
+
+EP00 用 Colab 很方便：打開瀏覽器就能跑。但接下來會遇到這些需求：
+
+| 需求 | Colab | 自己的電腦 |
+|---|---|---|
+| 程式長期保存、用 git 管理版本 | 不方便 | 可以 |
+| 寫多個檔案的專案、跑自動測試 | 不方便 | 可以 |
+| 用自己的顯示卡訓練模型 | 不行 | 可以 |
+| 只支援 Linux 的工具（例如之後會用到的 vLLM） | 部分可以 | 可以（WSL2 就是 Linux） |
+
+所以分工是：**Colab 用來一鍵執行每集的 notebook，自己的開發都在本機**。
+
+### 整體架構
+
+Windows 本身不是深度學習工具最常用的系統，大部分工具都是先為 Linux 寫的。**Windows 的 Linux 子系統 WSL2 Windows Subsystem for Linux** 讓你在 Windows 裡面跑一個真正的 Linux，而且可以直接用到顯示卡。
+
+```
+Windows
+├─ NVIDIA 驅動程式（只裝在 Windows 這一側）
+├─ VS Code（視窗在 Windows，程式碼和執行都在 Linux）
+└─ WSL2：Ubuntu（Linux）
+    ├─ git、uv
+    └─ 你的專案 ~/code/llm-labs
+        └─ .venv：這個專案自己的 Python 與套件（NumPy、PyTorch⋯）
+```
+
+<Aside type="tip" title="小提醒">
+
+- **用 macOS**：跳過步驟 1、2（WSL 和 Windows 驅動程式）；步驟 3 改用 `xcode-select --install` 安裝 git，再設定 `git config`；步驟 5 不需要 WSL 擴充功能，直接用 VS Code 開啟資料夾；步驟 7 跳過。其他步驟都一樣。
+- **用 Linux**：跳過步驟 1，步驟 5 不需要 WSL 擴充功能。步驟 2 不一樣：原生 Linux 要在 Linux 裡自己安裝 NVIDIA 驅動程式（Ubuntu 可以執行 `sudo ubuntu-drivers install`，裝完重新開機），再用 `nvidia-smi` 驗證。
+- **沒有 NVIDIA 顯示卡**也沒關係：第二部分的 NumPy 完全不需要顯示卡，之後需要顯示卡的集數會提供 Colab 版本。
+
+</Aside>
+
+接下來照順序做，**每一步都有「驗證」，過了再往下**。
+
+### 步驟 1：安裝 WSL2 與 Ubuntu
+
+在 Windows 的開始選單搜尋 PowerShell，按右鍵選「以系統管理員身分執行」，輸入：
+
+```powershell
+wsl --install
+```
+
+裝完重新開機，Ubuntu 會自動開啟，請你設定一組 Linux 使用者名稱和密碼。這組帳號跟 Windows 帳號無關；輸入密碼時畫面不會顯示任何字，這是正常的。如果沒有自動開啟，或之後要再打開 Ubuntu 的終端機，在開始選單搜尋「Ubuntu」點開即可。
+
+**驗證**（在 PowerShell）：
+
+```powershell
+wsl -l -v
+```
+
+應該看到 `Ubuntu`，而且 `VERSION` 是 `2`。
+
+<Aside type="caution" title="注意">
+
+之後所有專案都放在 Linux 的家目錄（`~/`）。不要放在 `/mnt/c/...`（也就是 Windows 的 C 槽），跨系統讀寫檔案會慢很多。
+
+</Aside>
+
+### 步驟 2：確認顯示卡
+
+Windows 上的 NVIDIA 驅動程式，WSL2 裡面也直接用得到，**不要在 Ubuntu 裡另外安裝 NVIDIA 驅動程式**。
+
+**驗證**（在 Ubuntu 的終端機 terminal，也就是輸入指令的視窗）：
+
+```bash
+nvidia-smi
+```
+
+應該看到你的顯示卡型號和顯示卡記憶體大小。沒有 NVIDIA 顯示卡的話，跳過這一步。
+
+如果出現找不到指令（`not found`）的訊息，先到 NVIDIA 官網更新 Windows 端的驅動程式，再在 PowerShell 執行 `wsl --shutdown`、重開 Ubuntu。這時 Ubuntu 可能會建議你執行 `sudo apt install nvidia-utils-…`，**不要照做**：那是給一般 Linux 電腦用的驅動程式套件，NVIDIA 的 WSL 說明明確要求不要在 WSL 裡安裝 Linux 驅動程式。
+
+### 步驟 3：基本工具
+
+在 Ubuntu 終端機輸入下面的指令。`apt` 是 Ubuntu 安裝軟體的工具：第一行更新軟體清單並升級已安裝的軟體，第二行安裝 git、編譯工具 `build-essential` 和下載工具 `curl`（下一步會用到）。`sudo` 代表「用管理員權限執行」，會要你輸入步驟 1 設定的 Linux 密碼：
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git build-essential curl
+git config --global user.name "你的名字"
+git config --global user.email "你的 email"
+git config --global init.defaultBranch main
+```
+
+git 是管理程式版本的工具，之後每完成一個段落就可以存一個版本，改壞了也能回到之前的樣子。
+
+**驗證**：`git --version` 會顯示版本號。
+
+### 步驟 4：安裝 uv
+
+`uv` 是 Python 的專案管理工具：一個工具就能管理 Python 版本、虛擬環境 virtual environment（下面會解釋）、套件，速度也很快。
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+```
+
+**驗證**：`uv --version` 會顯示版本號。
+
+<Aside type="note" title="為什麼不直接用系統的 Python 加 pip？">
+
+不同專案需要的套件版本常常不一樣，全部裝在同一個地方很容易互相打架。`uv` 會替每個專案建立獨立的**虛擬環境**（專案裡的 `.venv` 資料夾），並用 `uv.lock` 記下每個套件的精確版本，換一台電腦也能重建一模一樣的環境。
+
+</Aside>
+
+### 步驟 5：VS Code 連進 WSL
+
+1. 在 **Windows** 安裝 VS Code（微軟出的免費程式編輯器，到 code.visualstudio.com 下載）。
+2. 在 VS Code 左側的擴充功能面板（`Ctrl+Shift+X`）搜尋並安裝 **WSL**（Microsoft 出的）。
+3. 在 Ubuntu 終端機進到任一資料夾，輸入 `code .`，VS Code 會以 WSL 模式開啟。
+4. 在 WSL 模式下安裝 **Python** 和 **Jupyter** 擴充功能（它們要裝在 WSL 這一側）。
+
+**驗證**：VS Code 左下角顯示 `WSL: Ubuntu`，按 `` Ctrl+` `` 打開的終端機是 Linux 的。
+
+### 步驟 6：建立練習專案
+
+之後每一集的練習都放在同一個專案 `llm-labs` 裡：
+
+```bash
+mkdir -p ~/code/llm-labs && cd ~/code/llm-labs
+git init
+uv init --bare --python 3.12
+uv python pin 3.12
+uv add numpy matplotlib
+uv add --dev pytest ipykernel
+```
+
+前四行是：建立資料夾 `~/code/llm-labs` 並進到裡面（`mkdir -p` 建立資料夾，`cd` 切換資料夾，`&&` 表示前一個指令成功才執行下一個）；`git init` 讓 git 開始管理這個資料夾；`uv init` 建立專案設定檔 `pyproject.toml`（記錄專案名稱、需要的 Python 版本和套件）；`uv python pin 3.12` 把這個專案的 Python 版本固定在 3.12。
+
+最後兩行把套件裝進這個專案：`numpy`、`matplotlib` 是程式會用到的；`pytest`（跑測試）和 `ipykernel`（讓 VS Code 用這個環境跑 notebook）只有開發時需要，所以加上 `--dev`。
+
+接著在同一個終端機輸入 `code .`，用 VS Code 開啟這個專案，打開 `pyproject.toml`，在最後加上這幾行，讓測試找得到你的程式：
+
+```toml
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+```
+
+再建立這集的資料夾，並告訴 git 不要記錄虛擬環境：
+
+```bash
+mkdir -p ep01 tests
+touch ep01/__init__.py
+echo ".venv/" > .gitignore
+```
+
+**驗證**：
+
+```bash
+uv run python -c "import numpy; print(numpy.__version__)"
+```
+
+會印出 NumPy 的版本號。`uv run` 會自動用這個專案的環境執行，不用手動「啟動虛擬環境」。
+
+<Aside type="tip" title="小提醒">
+
+`.venv/` 不用存進 git，`pyproject.toml`、`uv.lock` 和 `.python-version` 要存，換電腦時執行 `uv sync` 就能裝回一模一樣的環境。
+
+</Aside>
+
+### 步驟 7：安裝 PyTorch（顯示卡版本）
+
+這一步需要 NVIDIA 顯示卡；沒有的話可以先跳過，第二部分用不到。
+
+在 Linux（包括 WSL2）上，一般的套件庫 PyPI 裡的 PyTorch 本身就支援 NVIDIA 顯示卡，搭配的 CUDA 版本會隨 PyTorch 更新（寫這篇時是 CUDA 13.0；CUDA 是 NVIDIA 讓程式使用顯示卡的平台）。要先確認的只有一件事：**你的驅動程式支援這個 CUDA 版本**。
+
+1. 執行步驟 2 的 `nvidia-smi`，看右上角的 `CUDA Version`：這是你的驅動程式最高支援的 CUDA 版本。
+2. 如果是 13.0 以上：直接執行 `uv add torch`（檔案很大，要等一陣子），然後跳到下面的驗證。
+3. 如果比 13.0 低：最簡單的是到 NVIDIA 官網更新 Windows 端的驅動程式，再回到第 1 點。不方便更新的話，就改裝搭配舊一點 CUDA 的版本。它放在 PyTorch 自己的下載來源，網址會隨版本改變，**請以官方說明為準**：到 PyTorch 官網的安裝頁面（pytorch.org/get-started/locally），選 `Linux`、`Pip`、`Python`，再選一個**不超過**你 `CUDA Version` 的 CUDA 版本，記下指令裡 `--index-url` 後面的網址，例如 `https://download.pytorch.org/whl/cu128`（`cu128` 代表 CUDA 12.8）。接著照 uv 官方的 PyTorch 說明（docs.astral.sh/uv/guides/integration/pytorch），在 `pyproject.toml` 最後加上這個來源，再執行 `uv add torch`。以 `cu128` 為例：
+
+```toml
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+```
+
+`marker` 那一段的意思是「只有在 Linux 和 Windows 才用這個來源」，這樣同一個專案搬到 macOS 也還能安裝。
+
+**驗證**：建立 `ep01/check_gpu.py`：
+
+```python
+import torch
+
+print("PyTorch", torch.__version__)
+print("CUDA 可用：", torch.cuda.is_available())
+if torch.cuda.is_available():
+    print("顯示卡：", torch.cuda.get_device_name(0))
+    x = torch.randn(1000, 1000, device="cuda")
+    y = x @ x
+    print("顯示卡上的矩陣乘法 OK，結果形狀", tuple(y.shape))
+```
+
+```bash
+uv run python ep01/check_gpu.py
+```
+
+應該看到 `CUDA 可用： True` 和你的顯示卡名稱。
+
+### 常見問題
+
+| 狀況 | 可能原因 | 處理方式 |
+|---|---|---|
+| `wsl --install` 失敗 | BIOS 沒有開啟虛擬化 | 進 BIOS 開啟 Virtualization（Intel 叫 VT-x，AMD 叫 SVM） |
+| `nvidia-smi` 找不到 | Windows 端驅動程式太舊 | 更新 Windows 端的 NVIDIA 驅動程式，在 PowerShell 執行 `wsl --shutdown` 再重開 Ubuntu |
+| `torch.cuda.is_available()` 是 `False` | Windows 端驅動程式太舊，不支援這個 PyTorch 用的 CUDA 版本；或裝到只有 CPU 的 PyTorch | 用 `nvidia-smi` 看右上角的 `CUDA Version`，照步驟 7 更新驅動程式，或改用不超過這個版本的 CUDA 下載來源，再重新安裝 |
+| VS Code 找不到 Python 環境 | 沒選到專案的 `.venv` | 右下角選擇直譯器，選 `llm-labs/.venv/bin/python` |
+| WSL 很吃記憶體 | 預設最多可以用 Windows 一半的記憶體 | 之後需要時再設定 `.wslconfig` |
+
+## 第二部分：NumPy——用「形狀」思考
+
+NumPy 是 Python 處理**陣列 array**（一大群排列整齊、型別相同的數字）最常用的套件，深度學習的資料幾乎都是陣列。
+
+在 VS Code 的 `ep01` 資料夾新增一個檔名以 `.ipynb` 結尾的檔案（例如 `ep01/playground.ipynb`），它就是一個 notebook。打開後按右上角的「Select Kernel」，選 `.venv`：kernel 是替 notebook 執行程式的 Python 環境，選 `.venv` 才用得到剛剛裝的 NumPy。也可以直接打開這集的 notebook，邊讀邊跑。
+
+<LinkButton href="https://colab.research.google.com/github/chainchen1103/llm-from-scratch/blob/main/notebooks/ep01/ep01_numpy_shapes.ipynb" icon="external" target="_blank" rel="noopener noreferrer">在 Colab 開啟 notebook</LinkButton>
+<LinkButton href="https://github.com/chainchen1103/llm-from-scratch/blob/main/notebooks/ep01/ep01_numpy_shapes.ipynb" variant="secondary" target="_blank" rel="noopener noreferrer">在 GitHub 查看</LinkButton>
+
+### 為什麼要 NumPy？
+
+先比較用 Python 的 list 和用 NumPy，算一百萬個數字的平方和：
+
+```python
+import time
+import numpy as np
+
+n = 1_000_000
+xs = [i * 0.001 for i in range(n)]
+a = np.array(xs)
+
+def best_of_5(f):
+    """執行 f 五次，回傳最快的一次花了幾秒"""
+    times = []
+    for _ in range(5):
+        t0 = time.perf_counter()
+        f()
+        times.append(time.perf_counter() - t0)
+    return min(times)
+
+t_list = best_of_5(lambda: sum(x * x for x in xs))
+t_numpy = best_of_5(lambda: (a * a).sum())
+print(f"list: {t_list*1000:.1f} ms, NumPy: {t_numpy*1000:.1f} ms")
+```
+
+第一次執行常常比較慢（要先做一些準備），所以每種寫法各跑 5 次、取最快的一次來比。實際數字依電腦而定，NumPy 通常快 10 倍左右（例如 list 約 30 ms、NumPy 約 3 ms）。
+
+原因是 NumPy 陣列裡的數字型別一致、在記憶體裡連續排列，運算由編譯好的 C 程式一次處理整個陣列，而不是由 Python 一個一個算。這種「整批處理、不寫迴圈」的寫法叫**向量化 vectorization**。
+
+深度學習的本質，就是對很大的陣列做很多運算。之後用的 PyTorch 張量 tensor 和 NumPy 陣列幾乎是同一套觀念，現在學的都會直接用上。
+
+### 陣列的三個基本屬性
+
+```python
+a = np.array([1, 2, 3])
+print(a, a.dtype, a.shape, a.ndim)    # [1 2 3] int64 (3,) 1
+
+m = np.array([[1.0, 2.0, 3.0],
+              [4.0, 5.0, 6.0]])
+print(m.dtype, m.shape, m.ndim)       # float64 (2, 3) 2
+```
+
+| 屬性 | 意思 | 例子 |
+|---|---|---|
+| `shape` | **形狀**：每個維度有多長 | `(2, 3)`：2 列、每列 3 個 |
+| `ndim` | 有幾個維度 | `2` |
+| `dtype` | 資料型別：裡面的數字是哪一種 | `float64`（小數）、`int64`（整數） |
+
+<Aside type="tip" title="小提醒">
+
+接下來幾個程式區塊，註解寫的是每一行用 `print()` 印出來的結果。在 notebook 裡，一個 cell 只會顯示**最後一行**的值，而且格式稍微不同：陣列會顯示成 `array([0, 2, 4, 6, 8])`，單一個數字會顯示成 `np.int64(6)`（就是整數 6），數值都一樣。想看某一行的結果，就把它包在 `print()` 裡，例如 `print(np.arange(0, 10, 2))`，或把它單獨放一個 cell。
+
+</Aside>
+
+常用的建立方式：
+
+```python
+np.zeros((2, 3))         # 2 × 3 個 0
+np.ones(3)               # [1. 1. 1.]
+np.arange(0, 10, 2)      # [0 2 4 6 8]：從 0 開始、每次加 2、不到 10
+np.linspace(0, 1, 5)     # [0.   0.25 0.5  0.75 1.  ]：0 到 1 平均切 5 個點
+```
+
+<Aside type="tip" title="小提醒">
+
+讀形狀的習慣是**從左到右、從外到內**。`(2, 3)` 念成「2 個、每個長 3」。EP00 的 `(1, 4, 896)` 就是「1 句話、每句 4 個 token、每個 token 是長 896 的向量」。
+
+</Aside>
+
+### 索引 indexing 與切片 slicing
+
+```python
+x = np.arange(10)        # [0 1 2 3 4 5 6 7 8 9]
+x[0], x[-1]              # 0 和 9（-1 是最後一個）
+x[2:5]                   # [2 3 4]（含頭不含尾）
+x[::2]                   # [0 2 4 6 8]（每 2 個取一個）
+x[::-1]                  # [9 8 7 6 5 4 3 2 1 0]（反過來）
+
+m = np.arange(12).reshape(3, 4)
+# [[ 0  1  2  3]
+#  [ 4  5  6  7]
+#  [ 8  9 10 11]]
+m[1, 2]                  # 6：第 1 列、第 2 個（都從 0 開始數）
+m[1]                     # [4 5 6 7]：整列
+m[:, 2]                  # [ 2  6 10]：每一列的第 2 個
+m[0:2, 1:3]              # [[1 2]
+                         #  [5 6]]
+
+x[x % 2 == 0]            # [0 2 4 6 8]：用條件挑出元素
+m[[0, 2]]                # 挑出第 0 列和第 2 列
+```
+
+`:` 的意思是「這個維度全部都要」。`m[:, 2]` 念成「所有列、每列的第 2 個」。
+
+### 改變形狀
+
+```python
+x = np.arange(6)         # [0 1 2 3 4 5]
+x.reshape(2, 3)          # [[0 1 2]
+                         #  [3 4 5]]
+x.reshape(3, -1).shape   # (3, 2)：-1 表示「這個維度你幫我算」
+m = x.reshape(2, 3)
+m.T.shape                # (3, 2)：轉置 transpose，列和欄互換
+m.reshape(-1)            # [0 1 2 3 4 5]：攤平回一維
+v = np.array([1, 2, 3])
+v[:, None].shape         # (3, 1)：在後面加一個長度 1 的維度
+v[None, :].shape         # (1, 3)：在前面加
+```
+
+`reshape` 不改變資料的順序，只改變「怎麼看」它，所以元素總數必須一樣（6 = 2 × 3 = 3 × 2）。
+
+### axis：沿著哪個方向做
+
+很多運算都有 `axis` 參數，告訴 NumPy 要沿著哪一個維度做：
+
+```python
+m = np.array([[1, 2, 3],
+              [4, 5, 6]])     # 形狀 (2, 3)
+m.sum()                       # 21：全部加起來
+m.sum(axis=0)                 # [5 7 9]：上下相加，形狀 (3,)
+m.sum(axis=1)                 # [ 6 15]：左右相加，形狀 (2,)
+m.mean(axis=1, keepdims=True) # [[2.]
+                              #  [5.]]：每列的平均，形狀 (2, 1)
+m.argmax(axis=1)              # [2 2]：每列最大值在第幾個
+```
+
+**記法：`axis=k` 就是把第 k 個維度「壓掉」。** 形狀 `(2, 3)` 沿 `axis=0` 加總，第 0 維的 2 被壓掉，剩下 `(3,)`；沿 `axis=1` 加總，剩下 `(2,)`。
+
+`keepdims=True` 會把被壓掉的維度留下來、長度變成 1，例如 `(2, 1)`。下一節會看到它為什麼重要。
+
+注意：「壓掉」說的是 `sum`、`mean`、`max`、`argmax` 這類把一整排數字合成一個數的運算。後面的 Softmax 也有 `axis`，但它不會壓掉維度，意思是「沿著這個維度的那一排數字彼此比較、加起來等於 1」，輸出的形狀和輸入一樣。
+
+<AxisDemo client:visible />
+
+### 本集重點：廣播 broadcasting
+
+兩個形狀不同的陣列做運算時，NumPy 會自動把小的那個「延伸」成大的形狀，這叫**廣播 broadcasting**：
+
+```python
+m = np.array([[1.0, 2.0, 3.0],
+              [4.0, 5.0, 6.0]])       # (2, 3)
+m + 10                                # 數字 10 延伸到每個元素
+m + np.array([100, 200, 300])         # (3,) 延伸成 (2, 3)：每列都加同一組
+m - m.mean(axis=1, keepdims=True)     # (2, 1) 延伸成 (2, 3)：每列減掉自己的平均
+# [[-1.  0.  1.]
+#  [-1.  0.  1.]]
+```
+
+最後一行就是上一節 `keepdims=True` 的用處：每列的平均是 `(2, 1)`，剛好可以沿著列延伸，讓每一列減掉**自己的**平均。如果沒有 `keepdims`，平均的形狀是 `(2,)`，就會出錯（等一下會看到）。
+
+**廣播的規則**：把兩個形狀**靠右對齊**，從最右邊的維度開始逐一比較：
+
+1. 兩個長度相等：可以。
+2. 其中一個長度是 1：把它延伸成另一個的長度。
+3. 其中一個沒有這個維度：當成長度 1，再套用第 2 條。
+4. 以上都不符合：報錯。
+
+| A 的形狀 | B 的形狀 | 結果 |
+|---|---|---|
+| `(2, 3)` | `(3,)` | `(2, 3)` |
+| `(2, 3)` | `(2, 1)` | `(2, 3)` |
+| `(2, 3)` | `(2,)` | 錯誤：靠右對齊後是 3 對 2 |
+| `(3,)` | `(3, 1)` | `(3, 3)`：不會報錯，但通常不是你要的 |
+
+<BroadcastDemo client:visible />
+
+<Aside type="tip" title="小提醒">
+
+「延伸」只是概念上的，NumPy 不會真的複製資料，所以又快又省記憶體。
+
+</Aside>
+
+最後一列 `(3,)` 和 `(3, 1)` 是最危險的情況：程式照跑、不會報錯，只是算出來的東西不是你以為的。「弄壞它」會再看一次。
+
+### `*` 和 `@` 不一樣
+
+```python
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[10, 20], [30, 40]])
+A * B             # 逐元素相乘：[[ 10  40]
+                  #             [ 90 160]]
+A @ B             # 矩陣乘法：  [[ 70 100]
+                  #             [150 220]]
+X = np.ones((3, 4))
+W = np.ones((4, 5))
+(X @ W).shape     # (3, 5)
+```
+
+**矩陣乘法 matrix multiplication** 是神經網路最核心的運算，EP03 會完整介紹。現在只要記得形狀的規則：**`(a, b) @ (b, c)` 得到 `(a, c)`**，中間的 `b` 必須一樣。
+
+### 亂數與 seed
+
+```python
+rng = np.random.default_rng(42)
+rng.integers(0, 10, size=5)    # [0 7 6 4 4]
+rng = np.random.default_rng(42)
+rng.integers(0, 10, size=5)    # 又是 [0 7 6 4 4]
+```
+
+電腦產生的「亂數」其實是用公式算出來的，起點叫**種子 seed**。固定 seed，同樣的程式就會得到同樣的亂數。**之後每個實驗都要固定 seed**，結果才能重現，不同設定之間的比較才公平。
+
+## 推導：Softmax 為什麼可以先減掉最大值
+
+EP00 說模型把分數 logits 換成機率，用的是 Softmax：
+
+$$
+p_i = \frac{e^{z_i}}{\sum_j e^{z_j}}
+$$
+
+- $z_i$：第 $i$ 個候選的分數。
+- $e^{z_i}$：$e$（約 2.718）的 $z_i$ 次方。現在只要知道兩件事：它永遠是正數，而且 $z$ 越大它越大（EP02 會好好介紹指數）。
+- 分母把所有候選的 $e^{z_j}$ 加起來，除下去之後，全部機率的總和就是 1。
+
+直接照公式寫，遇到大的分數會出問題：NumPy 預設的小數型別 `float64` 最大只能存到大約 $1.8 \times 10^{308}$（之後 PyTorch 預設用的 `float32` 更小，只到約 $3.4 \times 10^{38}$），而 $e^{710}$ 已經超過這個範圍，會變成無限大 `inf`，這叫**溢位 overflow**。分子分母都是 `inf`，相除的結果是 `nan`（not a number，不是數字）。
+
+解法來自一個簡單的性質：**每個分數都減掉同一個數 $c$，Softmax 的結果不變**。
+
+$$
+\frac{e^{z_i - c}}{\sum_j e^{z_j - c}}
+= \frac{e^{z_i} \cdot e^{-c}}{\sum_j e^{z_j} \cdot e^{-c}}
+= \frac{e^{-c} \cdot e^{z_i}}{e^{-c} \cdot \sum_j e^{z_j}}
+= \frac{e^{z_i}}{\sum_j e^{z_j}}
+$$
+
+第一步用到 $e^{a - c} = e^{a} \cdot e^{-c}$；第二步把每一項都有的 $e^{-c}$ 提出來；第三步分子分母的 $e^{-c}$ 互相抵消。
+
+那 $c$ 要選什麼？選**最大的分數**。減完之後，最大的一項變成 $e^0 = 1$，其他都小於等於 1，不會溢位；分母至少是 1，也不會變成除以 0。這種「數學上結果一樣、但電腦算起來不會壞掉」的寫法，叫做**數值穩定 numerically stable**。
+
+## 動手做：從零寫出 Softmax
+
+在 `llm-labs/ep01/softmax.py` 寫：
+
+```python
+import numpy as np
+
+def softmax(z, axis=-1):
+    """沿著 axis 把分數 z 轉成機率。z 可以是任意形狀。"""
+    # 你的實作
+```
+
+要求：
+
+1. 只用 NumPy，不寫 Python 迴圈。
+2. 支援任意形狀，沿著 `axis` 做（預設 `-1`，也就是最後一個維度）。
+3. **數值穩定**：輸入 `[1000, 1001, 1002]` 也不能壞掉。
+
+提示：用上面推導的「減掉最大值」，搭配 `axis` 和 `keepdims=True`，讓每一列減掉**自己的**最大值、除以**自己的**總和。
+
+把下面的測試存成 `llm-labs/tests/test_ep01_softmax.py`：
+
+```python
+import numpy as np
+
+from ep01.softmax import softmax
+
+def test_sums_to_one():
+    z = np.array([[1.0, 2.0, 3.0], [0.0, 0.0, 0.0]])
+    assert np.allclose(softmax(z).sum(axis=-1), 1.0)
+
+def test_known_values():
+    p = softmax(np.array([1.0, 2.0, 3.0]))
+    assert np.allclose(p, [0.09003057, 0.24472847, 0.66524096])
+
+def test_large_inputs_do_not_overflow():
+    p = softmax(np.array([1000.0, 1001.0, 1002.0]))
+    assert np.all(np.isfinite(p))
+    assert np.allclose(p, softmax(np.array([0.0, 1.0, 2.0])))
+
+def test_temperature_matches_ep00_demo():
+    z = np.log(np.array([0.62, 0.21, 0.09, 0.04, 0.04]))
+    assert np.allclose(softmax(z / 2.0), [0.405, 0.236, 0.154, 0.103, 0.103], atol=1e-3)
+
+def test_shape_is_preserved():
+    z = np.zeros((4, 7))
+    assert softmax(z).shape == (4, 7)
+
+def test_each_row_uses_its_own_max():
+    z = np.array([[0.0, 1.0, 2.0], [1000.0, 1001.0, 1002.0]])
+    p = softmax(z)
+    assert np.all(np.isfinite(p))
+    assert np.allclose(p[0], p[1])
+
+def test_axis_0():
+    z = np.array([[1.0, 2.0, 3.0], [1.0, 1.0, 1.0]])
+    assert np.allclose(softmax(z, axis=0).sum(axis=0), 1.0)
+```
+
+這是 pytest 的測試檔：pytest 會自動找 `tests/` 裡檔名以 `test_` 開頭的檔案，執行裡面每一個名字以 `test_` 開頭的函式。`assert 條件` 的意思是「這個條件必須成立」，不成立就讓那個測試失敗。`np.allclose(a, b)` 檢查兩組數字是不是「幾乎相等」（允許很小的誤差，弄壞它 3 會看到為什麼），`np.isfinite` 檢查數字不是 `inf` 也不是 `nan`。
+
+然後執行：
+
+```bash
+uv run pytest
+```
+
+7 個測試全部通過（`7 passed`）就完成了。
+
+第 4 個測試和 EP00 的溫度元件有關：元件在溫度 2 時顯示 40.5%、23.6%、15.4%、10.3%、10.3%。元件裡 5 個候選字在溫度 1 時的機率是 0.62、0.21、0.09、0.04、0.04；測試裡的 `np.log`（對數，EP02 會介紹）是從這些機率反推出分數，讓溫度 1 的 Softmax 剛好還原成這組機率。把分數除以溫度再做 Softmax，應該得到一樣的數字——網站背後就是這一行數學。
+
+<details>
+<summary>參考解答（先自己寫寫看）</summary>
+
+```python
+import numpy as np
+
+def softmax(z, axis=-1):
+    """沿著 axis 把分數 z 轉成機率。z 可以是任意形狀。"""
+    z = np.asarray(z, dtype=float)
+    shifted = z - z.max(axis=axis, keepdims=True)   # 每一列減掉自己的最大值
+    e = np.exp(shifted)
+    return e / e.sum(axis=axis, keepdims=True)      # 每一列除以自己的總和
+```
+
+`keepdims=True` 讓最大值和總和保留成長度 1 的維度，才能靠廣播套回每一列。
+
+</details>
+
+## 弄壞它
+
+每一個都先**猜**結果，再執行，最後用自己的話解釋。
+
+### 弄壞它 1：廣播悄悄算錯
+
+```python
+a = np.array([1, 2, 3])          # (3,)
+b = np.array([[1], [2], [3]])    # (3, 1)
+print((a - b).shape)
+print(a - b)
+```
+
+你可能以為結果是 `[0 0 0]`。
+
+<details>
+<summary>實際結果與解釋</summary>
+
+```
+(3, 3)
+[[ 0  1  2]
+ [-1  0  1]
+ [-2 -1  0]]
+```
+
+靠右對齊後是 `(1, 3)` 對 `(3, 1)`：兩個維度都有一邊是 1，所以兩邊都被延伸，變成 `(3, 3)`。結果是「`a` 的每個數減掉 `b` 的每個數」的表格，而且**沒有任何錯誤訊息**。
+
+這類錯誤在訓練模型時最可怕：程式照跑、損失 loss（衡量模型錯多少的數字）也照降，只是結果默默錯了。**防法：在關鍵的地方印出或用 `assert` 檢查形狀**，例如在這裡寫 `assert (a - b).shape == (3,)`，程式就會立刻報錯，提醒你形狀不對。
+
+</details>
+
+### 弄壞它 2：Softmax 溢位
+
+```python
+def softmax_naive(z):
+    e = np.exp(z)
+    return e / e.sum()
+
+softmax_naive(np.array([1000.0, 1001.0, 1002.0]))
+```
+
+<details>
+<summary>實際結果與解釋</summary>
+
+結果是 `[nan nan nan]`，還會出現 `overflow encountered in exp` 和 `invalid value encountered in divide` 兩個警告。$e^{1000}$ 超過電腦小數能表示的範圍，變成 `inf`；`inf / inf` 是 `nan`。照推導那一節，先減掉最大值就不會壞掉。
+
+</details>
+
+<SoftmaxDemo client:visible />
+
+### 弄壞它 3：整數溢位與小數誤差
+
+```python
+u = np.array([200], dtype=np.uint8)            # uint8 只能存 0 到 255
+print(u + np.uint8(100))
+print(0.1 + 0.2 == 0.3)
+print(np.isclose(0.1 + 0.2, 0.3))
+print(np.float32(16777216) + np.float32(1))
+```
+
+<details>
+<summary>實際結果與解釋</summary>
+
+- `[44]`：200 + 100 = 300 超過 255，整數會「繞回去」：300 − 256 = 44，而且不會報錯。
+- `False`：0.1 和 0.2 在電腦裡都無法精確表示，相加後跟 0.3 差了一點點。
+- `True`：`np.isclose` 允許很小的誤差。
+- `1.6777216e+07`：這是科學記號，意思是 $1.6777216 \times 10^{7}$，也就是 16777216（比較舊的 NumPy 會直接顯示 `16777216.0`）。`float32` 的精度有限，這麼大的數字再加 1，加不上去，結果還是 16777216。
+
+電腦裡的數字有範圍和精度的限制。之後的混合精度 mixed precision 訓練、量化 quantization（把模型的數字換成更小的型別）都跟這件事有關。**比較小數要用 `np.isclose` 或 `np.allclose`，不要用 `==`**。
+
+</details>
+
+### 弄壞它 4：axis 用錯
+
+```python
+scores = np.array([[1.0, 2.0, 3.0],     # 第 0 個 token 的 3 個候選分數
+                   [1.0, 1.0, 1.0]])    # 第 1 個 token 的 3 個候選分數
+```
+
+先在 notebook 載入你在 `ep01/softmax.py` 寫的 `softmax`。VS Code 會在 notebook 所在的資料夾執行程式，notebook 和 `softmax.py` 都在 `ep01/` 裡，所以直接寫檔名（照測試檔寫成 `from ep01.softmax import softmax` 反而會找不到）：
+
+```python
+from softmax import softmax
+```
+
+改過 `softmax.py` 之後，要重新啟動 kernel（notebook 上方的「Restart」）才會讀到新版。用這集的 notebook 的話，裡面已經定義好 `softmax`，不用匯入。
+
+如果把 Softmax 沿 `axis=0` 做，而不是 `axis=1`，每一列的機率加起來還是 1 嗎？
+
+<details>
+<summary>實際結果與解釋</summary>
+
+```python
+np.set_printoptions(precision=3)   # 只顯示到小數第 3 位，比較好讀
+softmax(scores, axis=0)
+# [[0.5   0.731 0.881]
+#  [0.5   0.269 0.119]]
+softmax(scores, axis=1)
+# [[0.09  0.245 0.665]
+#  [0.333 0.333 0.333]]
+```
+
+沿 `axis=0` 做，加起來是 1 的是每一**欄**（上下相加），每一列的加總不是 1。它比較的是「同一個候選、在兩個 token 之間」，對語言模型沒有意義：我們要的是每個 token 自己的候選之間的機率，所以要沿著候選所在的最後一個維度做，也就是 `axis=-1`。
+
+而且程式不會報錯——這和弄壞它 1 一樣，是「形狀對、意思錯」的 bug。
+
+</details>
+
+## 小結
+
+- 開發環境：Windows 用 WSL2 跑 Linux，VS Code 連進去寫程式；`uv` 替每個專案管理 Python 和套件，`uv run` 執行、`uv run pytest` 測試。
+- 陣列有 `shape`、`ndim`、`dtype`。讀形狀從外到內：`(1, 4, 896)` 是 1 句話、4 個 token、每個長 896。
+- `axis=k` 就是把第 k 個維度壓掉；`keepdims=True` 把它留成長度 1。
+- 廣播：靠右對齊，長度相等或其中一個是 1 才能運算。它很方便，但 `(3,)` 和 `(3, 1)` 這種組合會悄悄算錯，關鍵的地方要檢查形狀。
+- 數值穩定的 Softmax：先減掉最大值，結果不變，但不會溢位。
+
+## 自我檢測
+
+1. 形狀 `(32, 128, 768)` 的陣列 `x` 有幾個維度？總共有幾個數字？如果它代表「32 句話、每句 128 個 token、每個 token 是長 768 的向量」，`x[5]` 的形狀是什麼？`x[:, 0]` 呢？
+2. 對形狀 `(32, 128, 768)` 做 `.mean(axis=-1)`，結果的形狀是什麼？加上 `keepdims=True` 呢？
+3. 形狀 `(128, 768)` 和 `(768,)` 能相加嗎？`(128, 768)` 和 `(128,)` 呢？後者要怎麼改，才能讓每一列加上一個數？
+4. 為什麼 Softmax 要先減掉最大值？減掉之後結果為什麼不變？
+5. 為什麼實驗要固定 seed？
+
+<details>
+<summary>參考答案</summary>
+
+1. 3 個維度；共 32 × 128 × 768 = 3,145,728 個數字。`x[5]` 是第 5 句話：`(128, 768)`。`x[:, 0]` 是每句話的第 0 個 token：`(32, 768)`。
+2. `(32, 128)`：每個 token 的向量被平均成一個數。加上 `keepdims=True` 是 `(32, 128, 1)`。
+3. 第一組可以，結果是 `(128, 768)`：每一列都加上同一個長 768 的向量。第二組不行：靠右對齊後是 768 對 128。改成 `(128, 1)`（例如 `b[:, None]` 或 `b.reshape(-1, 1)`）就能讓每一列加上自己的那個數。
+4. 為了不溢位：$e^{z}$ 在 $z$ 很大時會超過電腦能表示的範圍。每個分數減掉同一個數，分子分母會同時乘上 $e^{-c}$，互相抵消，所以結果不變。
+5. 讓結果可以重現。同樣的程式、同樣的 seed 會得到同樣的結果，比較不同設定時，才知道差異是設定造成的，而不是運氣。
+
+</details>
+
+## 下一集
+
+這集我們說 $e^{z}$「永遠是正數，而且 $z$ 越大越大」，但還沒解釋它到底是什麼。下一集 **EP02 數學語言：函數、指數與對數、Σ 符號**，會把之後一直用到的數學符號一次講清楚：Softmax 裡的 $e^x$ 和 $\sum$，以及為什麼訓練模型時到處都是 $\log$。

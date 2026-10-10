@@ -1,0 +1,369 @@
+/*
+ * EP01 互動元件（BroadcastDemo、AxisDemo、SoftmaxDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 按鈕、輸入 ---------- */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	padding: 0.25rem 0.85rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chip:focus-visible,
+.input:focus-visible,
+.toggle input:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+.label {
+	font-weight: 700;
+}
+
+.input {
+	width: 7.5rem;
+	min-height: 2.25rem;
+	padding: 0.25rem 0.6rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+}
+
+.inputNarrow {
+	width: 6rem;
+}
+
+.toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	cursor: pointer;
+}
+
+.toggle input {
+	width: 1.15rem;
+	height: 1.15rem;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+}
+
+/* ---------- 程式碼與結果 ---------- */
+.code {
+	margin: 0;
+	padding: 0.6rem 0.85rem;
+	overflow-x: auto;
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-sm, 0.875rem);
+	line-height: 1.5;
+	white-space: pre;
+}
+
+.ok,
+.warn,
+.error {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.warn {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 18%, transparent);
+}
+
+.error {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 14%, transparent);
+}
+
+/* ---------- 廣播：靠右對齊的表格 ---------- */
+.scroll {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.align {
+	border-collapse: separate;
+	border-spacing: 0.35rem;
+	margin: 0;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.align th,
+.align td {
+	min-width: 2.6rem;
+	padding: 0.2rem 0.45rem;
+	border: 0;
+	border-radius: 0.35rem;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.align th[scope='row'] {
+	min-width: 0;
+	padding-inline-start: 0;
+	font-family: var(--__sl-font, sans-serif);
+	text-align: start;
+}
+
+.dimCell {
+	background: var(--llm-track, #f3ecdd);
+	font-weight: 700;
+}
+
+.dimMissing {
+	border: 1.5px dashed var(--llm-border, #e6dcc8) !important;
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.dimStretched {
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 35%, transparent);
+}
+
+.dimBad {
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 30%, transparent);
+}
+
+.ruleCell {
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	color: var(--llm-ink-muted, #4f5a73);
+	white-space: normal !important;
+}
+
+/* ---------- 格子 ---------- */
+.grids {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1rem;
+}
+
+.gridBlock {
+	display: grid;
+	gap: 0.35rem;
+	justify-items: center;
+}
+
+.grid {
+	display: grid;
+	gap: 0.25rem;
+}
+
+.cell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2.4rem;
+	height: 2.4rem;
+	padding: 0 0.25rem;
+	border-radius: 0.4rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.cellA {
+	background: color-mix(in srgb, var(--llm-vector, #4ea3f5) 30%, transparent);
+	border: 1.5px solid var(--llm-vector-deep, #2b7fd6);
+}
+
+.cellB {
+	background: color-mix(in srgb, var(--llm-attention, #7a6af0) 25%, transparent);
+	border: 1.5px solid var(--llm-attention-deep, #5b4bd6);
+}
+
+.cellResult {
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 22%, transparent);
+	border: 1.5px solid var(--llm-ffn-deep, #139670);
+}
+
+/* 廣播延伸出來的「虛擬複製」：虛線、淡色 */
+.cellVirtual {
+	border-style: dashed;
+	opacity: 0.55;
+	font-weight: 400;
+}
+
+.op {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.caption {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	color: var(--llm-ink-muted, #4f5a73);
+	white-space: nowrap;
+}
+
+/* ---------- axis：分組上色 ---------- */
+.g0 {
+	background: color-mix(in srgb, var(--llm-vector, #4ea3f5) 32%, transparent);
+	border: 1.5px solid var(--llm-vector-deep, #2b7fd6);
+}
+
+.g1 {
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 45%, transparent);
+	border: 1.5px solid var(--llm-token, #ffc24a);
+}
+
+.g2 {
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 30%, transparent);
+	border: 1.5px solid var(--llm-ffn-deep, #139670);
+}
+
+.gAll {
+	background: color-mix(in srgb, var(--llm-attention, #7a6af0) 25%, transparent);
+	border: 1.5px solid var(--llm-attention-deep, #5b4bd6);
+}
+
+.picked {
+	outline: 3px solid var(--llm-output, #ff6f5e);
+	outline-offset: 1px;
+}
+
+/* ---------- Softmax 比較表 ---------- */
+.cols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+	gap: 0.75rem;
+}
+
+.panel {
+	display: grid;
+	gap: 0.5rem;
+	align-content: start;
+	padding: 0.75rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.6rem;
+}
+
+.panelBad {
+	border-color: var(--llm-output, #ff6f5e);
+}
+
+.panelGood {
+	border-color: var(--llm-ffn, #22b88a);
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.table th,
+.table td {
+	padding: 0.2rem 0.35rem;
+	border: 0;
+	border-bottom: 1px solid var(--llm-border, #e6dcc8);
+	text-align: end;
+	white-space: nowrap;
+}
+
+.table th:first-child,
+.table td:first-child {
+	text-align: start;
+}
+
+.table td {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.bad {
+	color: var(--llm-output-deep, #e04e3e);
+	font-weight: 700;
+}

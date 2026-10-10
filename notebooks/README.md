@@ -10,13 +10,13 @@
 notebooks/
 ├── ep00/
 ├── ep01/
-│   └── ep01_numpy_intro.ipynb
+│   └── ep01_numpy_shapes.ipynb
 ├── ep02/
 └── ...
 ```
 
 - 資料夾名稱：`epXX`（`ep00`～`ep61`），和網站上的集數一致。
-- 檔名：以集數開頭，後面接簡短的英文主題，使用小寫與底線，例如 `ep01_numpy_intro.ipynb`。檔名避免中文與空白，Colab 連結和指令列比較不容易出問題。
+- 檔名：以集數開頭，後面接簡短的英文主題，使用小寫與底線，例如 `ep01_numpy_shapes.ipynb`。檔名避免中文與空白，Colab 連結和指令列比較不容易出問題。
 - 同一集需要多份 notebook 時，加上順序：`ep09_autograd_part1.ipynb`、`ep09_autograd_part2.ipynb`。
 
 ## 撰寫慣例
@@ -28,7 +28,7 @@ notebooks/
 ```markdown
 # EP01 開發環境與 NumPy 入門
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/chainchen1103/llm-from-scratch/blob/main/notebooks/ep01/ep01_numpy_intro.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/chainchen1103/llm-from-scratch/blob/main/notebooks/ep01/ep01_numpy_shapes.ipynb)
 ```
 
 徽章連結的路徑要和實際檔案路徑完全相同（`blob/main/notebooks/epXX/檔名.ipynb`）。
