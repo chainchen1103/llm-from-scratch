@@ -1,0 +1,33 @@
+{
+  "name": "llm-from-scratch-site",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.2",
+    "@astrojs/react": "^7.0.1",
+    "@astrojs/starlight": "^0.42.6",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/noto-sans-tc": "^5.3.0",
+    "astro": "^7.3.8",
+    "katex": "^0.19.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.35.5"
+  },
+  "overrides": {
+    "katex": "$katex"
+  }
+}

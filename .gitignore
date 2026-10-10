@@ -1,0 +1,31 @@
+# 相依套件
+node_modules/
+
+# Astro 建置輸出與快取
+dist/
+.astro/
+
+# 環境變數
+.env
+.env.*
+!.env.example
+
+# 日誌
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python / Jupyter
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# 作業系統與編輯器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

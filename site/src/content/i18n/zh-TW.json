@@ -1,0 +1,18 @@
+{
+  "page.previousLink": "上一頁",
+  "page.nextLink": "下一頁",
+  "page.draft": "這是草稿頁面，不會出現在正式發布的網站中。",
+  "builtWithStarlight.label": "使用 Starlight 建置",
+  "heading.anchorLabel": "「{{title}}」段落連結",
+  "aside.note": "備註",
+  "pagefind.clear_search": "清除",
+  "pagefind.load_more": "載入更多結果",
+  "pagefind.search_label": "搜尋本站",
+  "pagefind.filters_label": "篩選",
+  "pagefind.zero_results": "找不到「[SEARCH_TERM]」的相關結果",
+  "pagefind.many_results": "找到 [COUNT] 筆「[SEARCH_TERM]」的相關結果",
+  "pagefind.one_result": "找到 [COUNT] 筆「[SEARCH_TERM]」的相關結果",
+  "pagefind.alt_search": "找不到「[SEARCH_TERM]」的相關結果，改為顯示「[DIFFERENT_TERM]」的結果",
+  "pagefind.search_suggestion": "找不到「[SEARCH_TERM]」的相關結果，試試以下搜尋：",
+  "pagefind.searching": "正在搜尋「[SEARCH_TERM]」…"
+}

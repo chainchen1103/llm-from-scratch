@@ -1,0 +1,207 @@
+/*
+ * 網站主題：「扁平資訊圖」風格。
+ *
+ * 只透過 Starlight 提供的 CSS 變數（--sl-color-* / --sl-font*）客製，
+ * 不改動版面結構。--llm-* 是本站自己的語意色，給互動元件與插圖使用。
+ *
+ * 對比度（WCAG）重點：
+ * - 淺色：主文字 #1E2A44 / 紙張底 #F7F2E8 = 12.8:1；次文字 #4F5A73 = 6.2:1；
+ *   accent（連結）#5B4BD6 = 5.5:1。
+ * - 深色：主文字 #D6DBE6 / 底 #111A2C = 12.5:1；次文字 #9AA4B9 = 6.9:1；
+ *   accent（連結）#C4BCFF = 9.9:1。
+ * - 提示框（aside）標題 / 底色在兩種模式皆 ≥ 5.6:1；長條圖邊界 / 底軌 ≥ 3:1。
+ */
+
+/* ---------- 字型 ---------- */
+:root {
+	--sl-font: 'Noto Sans TC Variable', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+	/* 程式碼用 JetBrains Mono；程式碼註解裡的中文退回 Noto Sans TC。 */
+	--sl-font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'Noto Sans TC Variable', ui-monospace,
+		monospace;
+}
+
+/* ---------- 語意色（兩種模式共用的原色） ---------- */
+:root {
+	--llm-token: #ffc24a; /* token 黃 */
+	--llm-vector: #4ea3f5; /* 向量藍 */
+	--llm-vector-deep: #2b7fd6;
+	--llm-attention: #7a6af0; /* 注意力紫 */
+	--llm-attention-deep: #5b4bd6;
+	--llm-ffn: #22b88a; /* FFN 綠 */
+	--llm-ffn-deep: #139670;
+	--llm-output: #ff6f5e; /* 輸出珊瑚 */
+	--llm-output-deep: #e04e3e;
+	--llm-residual: #26334f; /* 殘差流墨藍 */
+}
+
+/* ---------- 深色模式（Starlight 預設） ---------- */
+:root {
+	--llm-paper: #111a2c;
+	--llm-card: #18233a;
+	--llm-border: #2c3a58;
+	--llm-ink: #e6e9f0;
+	--llm-ink-muted: #9aa4b9;
+	--llm-track: #0d1524;
+	--llm-bar-neutral: #6b7896;
+	--llm-bar-neutral-edge: #8a96b1;
+	--llm-bar-highlight: var(--llm-output);
+	--llm-bar-highlight-edge: #ff9a8d;
+	--llm-on-token: #1e2a44;
+
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #eceff5;
+	--sl-color-gray-2: #d6dbe6;
+	--sl-color-gray-3: #9aa4b9;
+	--sl-color-gray-4: #4a5878;
+	--sl-color-gray-5: #2c3a58;
+	--sl-color-gray-6: #18233a;
+	--sl-color-black: #111a2c;
+
+	--sl-color-accent-low: #2a2563;
+	--sl-color-accent: #7a6af0;
+	--sl-color-accent-high: #c4bcff;
+
+	--sl-color-orange-low: #45361a;
+	--sl-color-orange: #ffc24a;
+	--sl-color-orange-high: #ffe2a6;
+	--sl-color-blue-low: #15304d;
+	--sl-color-blue: #4ea3f5;
+	--sl-color-blue-high: #bcdcfb;
+	--sl-color-purple-low: #2a2563;
+	--sl-color-purple: #7a6af0;
+	--sl-color-purple-high: #d3cdff;
+	--sl-color-green-low: #0f3a30;
+	--sl-color-green: #22b88a;
+	--sl-color-green-high: #a6ebd3;
+	--sl-color-red-low: #4a201c;
+	--sl-color-red: #ff6f5e;
+	--sl-color-red-high: #ffc4bc;
+
+	--sl-color-bg-nav: #18233a;
+	--sl-color-bg-sidebar: #18233a;
+	--sl-color-bg-inline-code: #26334f;
+	--sl-color-hairline-light: #2c3a58;
+	--sl-color-hairline: #223049;
+	--sl-color-hairline-shade: #0b1220;
+}
+
+/* ---------- 淺色模式：紙張底 + 白卡片 + 墨藍字 ---------- */
+:root[data-theme='light'] {
+	--llm-paper: #f7f2e8;
+	--llm-card: #ffffff;
+	--llm-border: #e6dcc8;
+	--llm-ink: #1e2a44;
+	--llm-ink-muted: #4f5a73;
+	--llm-track: #f3ecdd;
+	--llm-bar-neutral: #a9b2c5;
+	--llm-bar-neutral-edge: #7c879e;
+	--llm-bar-highlight: var(--llm-output);
+	--llm-bar-highlight-edge: var(--llm-output-deep);
+	--llm-on-token: #1e2a44;
+
+	--sl-color-white: #141d33;
+	--sl-color-gray-1: #1e2a44;
+	--sl-color-gray-2: #1e2a44;
+	--sl-color-gray-3: #4f5a73;
+	--sl-color-gray-4: #9a917e;
+	--sl-color-gray-5: #e6dcc8;
+	--sl-color-gray-6: #efe8da;
+	--sl-color-gray-7: #fbf8f2;
+	--sl-color-black: #f7f2e8;
+
+	--sl-color-accent-low: #e9e6fc;
+	--sl-color-accent: #5b4bd6;
+	--sl-color-accent-high: #3a2da6;
+
+	--sl-color-orange-low: #fff1d2;
+	--sl-color-orange: #ffc24a;
+	--sl-color-orange-high: #7a4f00;
+	--sl-color-blue-low: #e3f0fd;
+	--sl-color-blue: #4ea3f5;
+	--sl-color-blue-high: #1a5a9e;
+	--sl-color-purple-low: #ece9fd;
+	--sl-color-purple: #7a6af0;
+	--sl-color-purple-high: #4334b8;
+	--sl-color-green-low: #ddf5ec;
+	--sl-color-green: #22b88a;
+	--sl-color-green-high: #0b654b;
+	--sl-color-red-low: #ffe6e2;
+	--sl-color-red: #ff6f5e;
+	--sl-color-red-high: #a8301f;
+
+	--sl-color-text-invert: #ffffff;
+	--sl-color-bg-nav: #ffffff;
+	--sl-color-bg-sidebar: #f7f2e8;
+	--sl-color-bg-inline-code: #efe8da;
+	--sl-color-hairline-light: #e6dcc8;
+	--sl-color-hairline: #e6dcc8;
+	--sl-color-hairline-shade: #e6dcc8;
+}
+
+/* ---------- 卡片：白底、米色邊框、圓角（扁平資訊圖） ---------- */
+article.card {
+	background-color: var(--llm-card);
+	border-color: var(--llm-border);
+	border-radius: 0.75rem;
+}
+
+/* 首頁（有 hero 的頁面）在寬螢幕時，剛好三張的卡片排成一列。 */
+@media (min-width: 72rem) {
+	:root[data-has-hero] .card-grid:has(> :nth-child(3):last-child) {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+/* 首頁 hero 的一句話介紹：平衡各行長度，避免最後一行只剩一兩個字。 */
+.hero .tagline {
+	text-wrap: balance;
+}
+
+/*
+ * 學習路線頁：各部的集數表撐滿內文寬度並固定「集數」「狀態」欄寬，
+ * 讓 10 個表格的欄位上下對齊。用側欄「目前頁面」連結判斷是不是學習路線頁。
+ */
+:root:has(a[aria-current='page'][href$='/roadmap/']) .sl-markdown-content table {
+	display: table;
+	width: 100%;
+	table-layout: fixed;
+}
+:root:has(a[aria-current='page'][href$='/roadmap/']) .sl-markdown-content :is(th, td):first-child {
+	width: 4.5rem;
+	white-space: nowrap;
+}
+:root:has(a[aria-current='page'][href$='/roadmap/']) .sl-markdown-content :is(th, td):last-child {
+	width: 6rem;
+	white-space: nowrap;
+}
+/* 手機寬度：縮小「集數」「狀態」欄與欄間距，把空間留給標題，減少標題折行。 */
+@media (max-width: 50rem) {
+	:root:has(a[aria-current='page'][href$='/roadmap/']) .sl-markdown-content :is(th, td) {
+		padding-inline: 0.5rem;
+	}
+	:root:has(a[aria-current='page'][href$='/roadmap/']) .sl-markdown-content :is(th, td):first-child {
+		width: 3.75rem;
+		padding-inline-start: 0;
+	}
+	:root:has(a[aria-current='page'][href$='/roadmap/']) .sl-markdown-content :is(th, td):last-child {
+		width: 4.5rem;
+		padding-inline-end: 0;
+	}
+}
+
+/*
+ * 內文的 h2 折行時平衡各行長度，避免最後一行只剩一個字。
+ * Starlight 把 h2 設成 inline、包在 .sl-heading-wrapper 裡（讓錨點圖示接在標題後面），
+ * 折行由外層區塊決定，所以 balance 要設在外層。
+ */
+.sl-markdown-content :is(.sl-heading-wrapper.level-h2, h2) {
+	text-wrap: balance;
+}
+
+/* ---------- KaTeX ---------- */
+/* 區塊公式太寬時在公式內水平捲動，不撐破手機版面。 */
+.katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-block: 0.25rem;
+}

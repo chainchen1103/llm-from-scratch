@@ -1,0 +1,277 @@
+/*
+ * TemperatureDemo 的樣式。顏色來自 src/styles/theme.css 的 --llm-* 變數，
+ * 淺色／深色模式會自動切換；括號內是沒有載入主題時的備援值。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+/* ---------- 輸入句子 ---------- */
+.prompt {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.promptLabel {
+	padding: 0.1rem 0.6rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.promptText {
+	font-size: clamp(1.25rem, 5vw, 1.5rem);
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+
+.tokenFilled,
+.tokenEmpty {
+	display: inline-block;
+	min-width: 1.6em;
+	margin-inline-start: 0.15em;
+	padding: 0 0.3em;
+	border-radius: 0.35em;
+	text-align: center;
+}
+
+.tokenFilled {
+	background: var(--llm-token, #ffc24a);
+	color: var(--llm-on-token, #1e2a44);
+	font-weight: 700;
+}
+
+.tokenEmpty {
+	border: 2px dashed var(--llm-border, #e6dcc8);
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+/* ---------- 溫度滑桿 ---------- */
+.control {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.controlHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.label {
+	font-weight: 700;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.valueNote {
+	margin-inline-start: 0.25rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-weight: 400;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	cursor: pointer;
+}
+
+.slider:focus-visible,
+.button:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 3px;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+/* ---------- 機率長條 ---------- */
+.chartTitle {
+	font-weight: 700;
+}
+
+.bars {
+	display: grid;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.row {
+	display: grid;
+	grid-template-columns: 2.75em minmax(0, 1fr) 4.25em;
+	align-items: center;
+	gap: 0.75rem;
+	margin: 0;
+}
+
+.token {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.track {
+	display: block;
+	height: 1.25rem;
+	overflow: hidden;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	/* 圓角不要太大：機率只有幾 % 的短長條才不會被圓角裁成細線或小圓點。 */
+	border-radius: 0.375rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.bar,
+.barHighlight {
+	display: block;
+	height: 100%;
+	max-width: 100%;
+	border-radius: 0 0.25rem 0.25rem 0;
+	transition: width 180ms ease-out;
+}
+
+.bar {
+	background: var(--llm-bar-neutral, #a9b2c5);
+	box-shadow: inset 0 0 0 1px var(--llm-bar-neutral-edge, #7c879e);
+}
+
+.barHighlight {
+	background: var(--llm-bar-highlight, #ff6f5e);
+	box-shadow: inset 0 0 0 1px var(--llm-bar-highlight-edge, #e04e3e);
+}
+
+.percent {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+	white-space: nowrap;
+}
+
+/* ---------- 抽樣 ---------- */
+.sampleArea {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1rem;
+}
+
+.button {
+	min-height: 2.75rem;
+	padding: 0.5rem 1.25rem;
+	border: 0;
+	border-radius: 999px;
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.button:hover {
+	filter: brightness(1.08);
+}
+
+.button:active {
+	transform: translateY(1px);
+}
+
+.result {
+	min-width: 0;
+}
+
+.resultToken {
+	padding: 0 0.3em;
+	border-radius: 0.3em;
+	background: var(--llm-token, #ffc24a);
+	color: var(--llm-on-token, #1e2a44);
+}
+
+.history {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.historyLabel,
+.historyEmpty {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.historyList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.chip {
+	min-width: 2em;
+	margin: 0;
+	padding: 0 0.5em;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	text-align: center;
+}
+
+.chip:first-child {
+	border-color: transparent;
+	background: var(--llm-token, #ffc24a);
+	color: var(--llm-on-token, #1e2a44);
+	font-weight: 700;
+}
+
+.hint {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.bar,
+	.barHighlight {
+		transition: none;
+	}
+}
