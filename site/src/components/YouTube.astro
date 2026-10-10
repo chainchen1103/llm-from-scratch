@@ -1,0 +1,40 @@
+---
+// YouTube 影片嵌入：使用隱私強化模式（youtube-nocookie.com），捲動到附近才載入
+interface Props {
+	id: string;
+	title: string;
+}
+const { id, title } = Astro.props;
+---
+
+<div class="yt">
+	<iframe
+		src={`https://www.youtube-nocookie.com/embed/${id}`}
+		title={title}
+		loading="lazy"
+		allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+		referrerpolicy="strict-origin-when-cross-origin"
+		allowfullscreen></iframe>
+</div>
+<p class="yt-link"><a href={`https://youtu.be/${id}`} target="_blank" rel="noopener noreferrer">在 YouTube 觀看</a></p>
+
+<style>
+	.yt {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		background: #000;
+	}
+	.yt iframe {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+	.yt-link {
+		font-size: var(--sl-text-sm);
+	}
+</style>
