@@ -74,6 +74,7 @@ export default function TemperatureDemo() {
 	const [nextId, setNextId] = useState(1);
 	const sliderId = useId();
 	const hintId = useId();
+	const noteId = useId();
 	const chartTitleId = useId();
 	const sliderRef = useRef<HTMLInputElement>(null);
 
@@ -117,6 +118,9 @@ export default function TemperatureDemo() {
 						<span className={styles.valueNote}>{describeTemperature(temperature)}</span>
 					</output>
 				</div>
+				<p id={noteId} className={styles.note}>
+					這裡的「溫度」是<strong>取樣溫度</strong>（sampling temperature），控制模型抽字有多隨機，跟今天天氣幾度無關。
+				</p>
 				<input
 					ref={sliderRef}
 					id={sliderId}
@@ -127,7 +131,7 @@ export default function TemperatureDemo() {
 					step={T_STEP}
 					value={temperature}
 					aria-valuetext={valueText}
-					aria-describedby={hintId}
+					aria-describedby={`${noteId} ${hintId}`}
 					onChange={(e) => setTemperature(Number(e.currentTarget.value))}
 				/>
 				<div className={styles.scale} aria-hidden="true">

@@ -34,7 +34,7 @@ import TemperatureDemo from '../../components/TemperatureDemo.tsx';
 
 ## 試試看：溫度怎麼改變模型的回答？
 
-LLM（大型語言模型，Large Language Model）產生文字時，其實一直在做同一件事：猜下一個字（精確來說是下一個 token）。它先替每個候選字打一個分數，換算成機率，再依照機率抽出一個字——這個步驟叫做取樣（sampling）。下面的例子裡，你輸入了「今天天氣很」——拖動溫度（temperature）滑桿，看看機率怎麼變化，再按「抽一次」實際抽抽看。
+LLM（大型語言模型，Large Language Model）產生文字時，其實一直在做同一件事：猜下一個字（精確來說是下一個 token）。它先替每個候選字打一個分數，換算成機率，再依照機率抽出一個字——這個步驟叫做取樣（sampling）。下面的例子裡，你輸入了「今天天氣很」——拖動溫度（temperature）滑桿——注意，這是模型的「取樣溫度」，不是天氣的溫度——看看機率怎麼變化，再按「抽一次」實際抽抽看。
 
 <TemperatureDemo client:visible />
 

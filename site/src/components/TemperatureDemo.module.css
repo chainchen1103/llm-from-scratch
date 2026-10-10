@@ -94,6 +94,15 @@
 	font-weight: 700;
 }
 
+.note {
+	margin: 0.25rem 0 0.5rem;
+	padding: 0.375rem 0.75rem;
+	border-inline-start: 3px solid var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 10%, transparent);
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
 .valueNote {
 	margin-inline-start: 0.25rem;
 	color: var(--llm-ink-muted, #4f5a73);
