@@ -119,7 +119,7 @@ export default function TemperatureDemo() {
 					</output>
 				</div>
 				<p id={noteId} className={styles.note}>
-					這裡的「溫度」是<strong>取樣溫度</strong>（sampling temperature），控制模型抽字有多隨機，跟今天天氣幾度無關。
+					這裡的「溫度」是<strong>取樣溫度</strong> sampling temperature，控制模型抽字有多隨機，跟今天天氣幾度無關。
 				</p>
 				<input
 					ref={sliderRef}
