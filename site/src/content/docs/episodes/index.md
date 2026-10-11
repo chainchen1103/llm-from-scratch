@@ -9,6 +9,6 @@ sidebar:
 | 集數 | 標題 | 內容 |
 |---|---|---|
 | EP00 | [按下送出之後，發生了什麼？](/episodes/ep00/) | [影片](https://youtu.be/UIhFviZ4YFw)、圖文教學、notebook |
-| EP01 | [開發環境與 NumPy 入門](/episodes/ep01/) | 圖文教學、notebook、互動元件（影片製作中） |
+| EP01 | [開發環境與 NumPy 入門](/episodes/ep01/) | [影片](https://youtu.be/s8xf_ct7HvI)、圖文教學、notebook、互動元件 |
 
 每一集推出後，都會依序出現在側欄的「課程」分類裡。想先看看整個系列會教哪些內容，可以到[學習路線](/roadmap/)瀏覽全部 62 集的規劃。
