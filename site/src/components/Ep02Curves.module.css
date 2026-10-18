@@ -1,0 +1,542 @@
+/*
+ * EP02 互動元件（CompoundDemo、ExpLogMirror）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+
+	/* 曲線與文字的顏色：深色模式（預設）直接用原色 */
+	--ep02-exp: var(--llm-vector, #4ea3f5);
+	--ep02-exp-text: var(--llm-vector, #4ea3f5);
+	--ep02-ln: var(--llm-attention, #7a6af0);
+	--ep02-ln-text: var(--sl-color-purple-high, #d3cdff);
+	--ep02-mirror: var(--llm-bar-neutral-edge, #8a96b1);
+	--ep02-money: var(--llm-output, #ff6f5e);
+	--ep02-money-edge: var(--llm-output-deep, #e04e3e);
+}
+
+/* 淺色模式：白底上改用深一階的藍、紫，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep02-exp: var(--llm-vector-deep, #2b7fd6);
+	--ep02-exp-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep02-ln: var(--llm-attention, #7a6af0);
+	--ep02-ln-text: var(--llm-attention-deep, #5b4bd6);
+	--ep02-mirror: var(--llm-bar-neutral-edge, #7c879e);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+/* 標題折行時平衡兩行的長度，避免最後一行只剩「（n）？」 */
+.balance {
+	text-wrap: balance;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* ---------- 按鈕、滑桿 ---------- */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	padding: 0.25rem 0.85rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chip:focus-visible,
+.slider:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+.sliderHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	cursor: pointer;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+/* ---------- 複利：算式 ---------- */
+.formulaBox {
+	display: grid;
+	gap: 0.35rem;
+	padding: 0.75rem 0.9rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.formula {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0 0.5rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(1rem, 3.6vw, 1.2rem);
+	line-height: 1.5;
+}
+
+.formula sup {
+	font-size: 0.7em;
+	line-height: 0;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.result {
+	font-weight: 700;
+	color: var(--llm-ink, #1e2a44);
+}
+
+/* ---------- 複利：數線 ---------- */
+.line {
+	padding-block: 0.25rem;
+}
+
+.lineInner {
+	position: relative;
+	height: 4.75rem;
+	margin-inline: 1rem;
+}
+
+/* 數線本體 */
+.lineInner::before {
+	content: '';
+	position: absolute;
+	inset-inline: -0.5rem;
+	top: 2.25rem;
+	height: 2px;
+	background: var(--llm-ink-muted, #4f5a73);
+}
+
+.tick {
+	position: absolute;
+	top: calc(2.25rem - 4px);
+	width: 2px;
+	height: 10px;
+	margin-inline-start: -1px;
+	background: var(--llm-ink-muted, #4f5a73);
+}
+
+.tickMinor {
+	top: calc(2.25rem - 2px);
+	height: 6px;
+	opacity: 0.6;
+}
+
+.tickLabel {
+	position: absolute;
+	top: 2.85rem;
+	transform: translateX(-50%);
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* e 的位置：虛線 */
+.eMark {
+	position: absolute;
+	top: 0.2rem;
+	height: 2.75rem;
+	border-inline-start: 2px dashed var(--llm-ink, #1e2a44);
+	margin-inline-start: -1px;
+}
+
+.eLabel {
+	position: absolute;
+	top: -0.2rem;
+	right: 0.35rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.ghost,
+.dot {
+	position: absolute;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.ghost {
+	top: 2.25rem;
+	width: 9px;
+	height: 9px;
+	border: 1.5px solid var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-card, #ffffff);
+}
+
+.dot {
+	top: 2.25rem;
+	width: 18px;
+	height: 18px;
+	border: 2.5px solid var(--ep02-money-edge);
+	background: var(--ep02-money);
+	transition: left 0.35s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dot {
+		transition: none;
+	}
+}
+
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.legendDot {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border: 2px solid var(--ep02-money-edge);
+	border-radius: 50%;
+	background: var(--ep02-money);
+}
+
+.legendGhost {
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border: 1.5px solid var(--llm-bar-neutral-edge, #7c879e);
+	border-radius: 50%;
+}
+
+.legendDash {
+	display: inline-block;
+	width: 0;
+	height: 1rem;
+	border-inline-start: 2px dashed var(--llm-ink, #1e2a44);
+}
+
+/* ---------- 鏡像：座標圖 ---------- */
+.mirrorLayout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 1rem 1.25rem;
+}
+
+.plotWrap {
+	flex: 1 1 22rem;
+	max-width: 26rem;
+	min-width: 0;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.axis {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.5px;
+}
+
+.axisArrow {
+	fill: var(--llm-ink-muted, #4f5a73);
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisName {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.curveExp,
+.curveLn {
+	fill: none;
+	stroke-width: 3px;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.curveExp {
+	stroke: var(--ep02-exp);
+}
+
+.curveLn {
+	stroke: var(--ep02-ln);
+}
+
+.mirrorLine {
+	stroke: var(--ep02-mirror);
+	stroke-width: 2px;
+	stroke-dasharray: 7 6;
+}
+
+.segment {
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 2.5px;
+	stroke-dasharray: 0.5 6;
+	stroke-linecap: round;
+}
+
+.rightAngle {
+	fill: none;
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.5px;
+}
+
+.labelExp {
+	fill: var(--ep02-exp-text);
+	font-weight: 700;
+}
+
+.labelLn {
+	fill: var(--ep02-ln-text);
+	font-weight: 700;
+}
+
+.labelMirror {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+.pointA,
+.pointB {
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.pointA {
+	fill: var(--ep02-exp);
+}
+
+.pointB {
+	fill: var(--ep02-ln);
+}
+
+/* ---------- 鏡像：右邊的數字 ---------- */
+.readout {
+	flex: 1 1 12rem;
+	display: grid;
+	gap: 0.6rem;
+	align-content: start;
+	min-width: 0;
+}
+
+.eqs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 2rem;
+	padding: 0.6rem 0.9rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.eq {
+	display: flex;
+	align-items: baseline;
+	gap: 0.55rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(1rem, 3.8vw, 1.15rem);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.eq sup {
+	font-size: 0.7em;
+	line-height: 0;
+}
+
+.swatchExp,
+.swatchLn {
+	flex: none;
+	display: inline-block;
+	width: 0.75rem;
+	height: 0.75rem;
+	border-radius: 50%;
+	transform: translateY(0.05rem);
+}
+
+.swatchExp {
+	background: var(--ep02-exp);
+}
+
+.swatchLn {
+	background: var(--ep02-ln);
+}
+
+.coords {
+	display: grid;
+	gap: 0.15rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.coordExp {
+	color: var(--ep02-exp-text);
+	font-weight: 700;
+}
+
+.coordLn {
+	color: var(--ep02-ln-text);
+	font-weight: 700;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 14px;
+}
+
+.plot .labelExp,
+.plot .labelLn,
+.plot .labelMirror {
+	font-size: 15px;
+}
+
+.coords sup,
+.readout sup {
+	font-size: 0.7em;
+	line-height: 0;
+}

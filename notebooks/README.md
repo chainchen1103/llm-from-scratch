@@ -12,6 +12,7 @@ notebooks/
 ├── ep01/
 │   └── ep01_numpy_shapes.ipynb
 ├── ep02/
+│   └── ep02_math_language.ipynb
 └── ...
 ```
 

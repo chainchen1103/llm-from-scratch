@@ -1,0 +1,782 @@
+/*
+ * EP02 互動元件（SigmaLoopDemo、SequenceProbDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 Starlight 的 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+
+	/*
+	 * 錯誤的字（0.0、IndexError、漏加⋯）：深色模式（預設）用珊瑚原色，
+	 * 淺色模式用深一階的紅，兩種模式對比都 ≥ 4.5:1（--llm-output-deep 只有約 3.9:1，留給框線用）。
+	 * 「正在加」的那一格：深色模式用實心黃底＋深色字，半透明的黃疊在深色底上會變成暗黃，字看不清楚。
+	 */
+	--ep02-bad-text: var(--llm-output, #ff6f5e);
+	--ep02-current-bg: var(--llm-token, #ffc24a);
+	--ep02-current-ink: var(--llm-on-token, #1e2a44);
+}
+
+:global(:root[data-theme='light']) .demo {
+	--ep02-bad-text: var(--sl-color-red-high, #a8301f);
+	--ep02-current-bg: color-mix(in srgb, var(--llm-token, #ffc24a) 50%, transparent);
+	--ep02-current-ink: var(--llm-ink, #1e2a44);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+/* 說明文字裡的數字、程式片段：不要從中間折行 */
+.num {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ---------- 按鈕、滑桿 ---------- */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip,
+.button {
+	min-height: 2.25rem;
+	padding: 0.25rem 0.85rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 數字選擇鈕：固定寬度，排起來整齊 */
+.chipNum {
+	min-width: 2.5rem;
+	padding-inline: 0.5rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+/* 主要動作（下一步、加 token）：實心 */
+.primary {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.button:disabled,
+.chip:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.chip:focus-visible,
+.button:focus-visible,
+.slider:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+.chipCode {
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+.slider {
+	flex: 1 1 10rem;
+	min-width: 8rem;
+	max-width: 20rem;
+	height: 2.25rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	background: transparent;
+	cursor: pointer;
+}
+
+/* ---------- 程式碼 ---------- */
+.code {
+	margin: 0;
+	padding: 0.5rem 0;
+	overflow-x: auto;
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-sm, 0.875rem);
+	line-height: 1.55;
+	white-space: pre;
+}
+
+.codeLine {
+	display: block;
+	min-width: max-content;
+	padding: 0 0.6rem 0 0.8rem;
+}
+
+.codeLineSoft {
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.codeLineOn {
+	box-shadow: inset 4px 0 0 var(--sl-color-text-accent, #5b4bd6);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 40%, transparent);
+	font-weight: 700;
+}
+
+.codeLineBad {
+	box-shadow: inset 4px 0 0 var(--llm-output-deep, #e04e3e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 30%, transparent);
+	font-weight: 700;
+}
+
+.codeOut {
+	display: block;
+	margin-top: 0.35rem;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	padding: 0.3rem 0.6rem 0 0.8rem;
+	border-top: 1px dashed var(--llm-border, #e6dcc8);
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.codeOutBad {
+	color: var(--ep02-bad-text);
+	font-weight: 700;
+}
+
+/* ---------- 訊息框 ---------- */
+.ok,
+.warn,
+.error {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.warn {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 18%, transparent);
+}
+
+.error {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 14%, transparent);
+}
+
+.scroll {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/*
+ * for 迴圈和目前狀態：程式那張的基本寬度剛好放得下最長的一行程式（不用左右捲動），
+ * 多出來的寬度大多分給目前狀態（total 的算式比較長）；放不下兩張時上下排。
+ */
+.cols {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.cols > * {
+	flex: 2 1 14rem;
+}
+
+.cols > :first-child {
+	flex: 1 1 18.5rem;
+}
+
+.panel {
+	display: grid;
+	gap: 0.5rem;
+	align-content: start;
+	min-width: 0;
+	padding: 0.75rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.6rem;
+}
+
+.panelBad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 7%, transparent);
+}
+
+.panelGood {
+	border-color: var(--llm-ffn, #22b88a);
+}
+
+.bad {
+	color: var(--ep02-bad-text);
+	font-weight: 700;
+}
+
+/* ================= SigmaLoopDemo ================= */
+
+/* 數學式：Σ 上下標用 HTML 排版 */
+.formula {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.4rem;
+	padding: 0.6rem 0.75rem;
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.math {
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+	font-size: 1.15rem;
+}
+
+.mvar {
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+}
+
+.math sub,
+.termSym sub,
+.cellMath sub {
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+	font-style: normal;
+	font-size: 0.7em;
+	line-height: 0;
+}
+
+.sigma {
+	display: inline-grid;
+	justify-items: center;
+	line-height: 1;
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+}
+
+.sigmaLimit {
+	font-size: 0.85rem;
+	line-height: 1.1;
+	white-space: nowrap;
+}
+
+/* KaTeX_Size2 是 KaTeX 排「展示用」大型 Σ 的字型；字身比一般字高，行高要留空間，上下標才不會疊到 */
+.sigmaSym {
+	font-family: 'KaTeX_Size2', 'KaTeX_Main', 'Times New Roman', serif;
+	font-size: 1.15rem;
+	line-height: 1.9;
+}
+
+.eq {
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+	font-size: 1.15rem;
+	padding-inline: 0.1rem;
+}
+
+.terms {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.3rem;
+}
+
+.plus {
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+/* 每一項：上面 x_i、下面數值 */
+.term {
+	display: inline-grid;
+	justify-items: center;
+	min-width: 2.4rem;
+	padding: 0.15rem 0.3rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.4rem;
+	background: var(--llm-card, #ffffff);
+	line-height: 1.25;
+}
+
+.termSym {
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+	font-size: 1.05rem;
+}
+
+.termVal {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+/* 最後的「= 總和」不要拆開折行 */
+.result {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	white-space: nowrap;
+}
+
+.total {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: 1.25rem;
+	font-weight: 700;
+}
+
+/* 手機上縮小一點，5 項比較容易排在同一行 */
+@media (max-width: 30rem) {
+	.formula {
+		gap: 0.3rem 0.25rem;
+		padding-inline: 0.5rem;
+	}
+
+	.terms {
+		gap: 0.15rem;
+	}
+
+	.result {
+		gap: 0.25rem;
+	}
+
+	.term {
+		min-width: 2rem;
+		padding-inline: 0.2rem;
+	}
+}
+
+/* 陣列：上面數學的 x_i，中間數值，下面 Python 的 x[i] */
+.array {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(2.75rem, 1fr);
+	justify-content: start;
+	gap: 0.35rem;
+	max-width: 24rem;
+}
+
+/* 有「漏加」「多加」標籤的格子比較高：內容一律靠上對齊，每一列才會對齊 */
+.slot {
+	display: grid;
+	justify-items: center;
+	align-content: start;
+	gap: 0.2rem;
+}
+
+.cellMath {
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+	font-size: 1rem;
+	line-height: 1.2;
+}
+
+.cellPy {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	color: var(--llm-ink-muted, #4f5a73);
+	white-space: nowrap;
+}
+
+.cell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 2.6rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.45rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	font-size: var(--sl-text-base, 1rem);
+}
+
+/* Σ 要加的範圍：藍色虛線框 */
+.inRange {
+	border-style: dashed;
+	border-color: var(--llm-vector-deep, #2b7fd6);
+	background: color-mix(in srgb, var(--llm-vector, #4ea3f5) 12%, transparent);
+}
+
+/* 已經加進 total：綠色 */
+.added {
+	border-style: solid;
+	border-color: var(--llm-ffn-deep, #139670);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 32%, transparent);
+}
+
+/* 正在加的這一項：黃底＋accent 外框 */
+.current {
+	border-style: solid;
+	border-color: var(--llm-token, #ffc24a);
+	background: var(--ep02-current-bg);
+	color: var(--ep02-current-ink);
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* 跑完之後：Σ 要加卻沒加（漏加）、不該加卻加了（多加） */
+.missing {
+	border: 2px dashed var(--llm-output-deep, #e04e3e);
+	background: transparent;
+	color: var(--ep02-bad-text);
+}
+
+.extra {
+	border: 2px solid var(--llm-output-deep, #e04e3e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 28%, transparent);
+}
+
+/* 不存在的 x[5] */
+.ghost {
+	border: 2px dashed var(--llm-output-deep, #e04e3e);
+	background: repeating-linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--llm-output, #ff6f5e) 18%, transparent) 0 6px,
+		transparent 6px 12px
+	);
+	color: var(--ep02-bad-text);
+}
+
+.tag {
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.tagMissing,
+.tagExtra {
+	color: var(--ep02-bad-text);
+}
+
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.9rem;
+	font-size: var(--sl-text-xs, 0.8125rem);
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.swatch {
+	display: inline-block;
+	width: 0.95rem;
+	height: 0.95rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.2rem;
+}
+
+/* 目前狀態：小表格 */
+.state {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.15rem 0.75rem;
+	margin: 0;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.state dt {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.state dd {
+	margin: 0;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+/* ================= SequenceProbDemo ================= */
+
+/* 連乘的兩張卡片並排，log 加總那張橫跨整列 */
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+	gap: 0.75rem;
+}
+
+.cardWide {
+	grid-column: 1 / -1;
+}
+
+.pValue {
+	min-width: 4.5rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.count {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.6rem;
+}
+
+.countNum {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: 1.6rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.cardSub {
+	font-size: var(--sl-text-xs, 0.8125rem);
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.bigValue {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: 1.2rem;
+	font-weight: 700;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.bigValueBad {
+	color: var(--ep02-bad-text);
+}
+
+.badge {
+	justify-self: start;
+	padding: 0.15rem 0.55rem;
+	border-radius: 0.35rem;
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+}
+
+.badgeBad {
+	border: 1.5px solid var(--llm-output-deep, #e04e3e);
+	background: var(--sl-color-red-low, #ffe6e2);
+	color: var(--sl-color-red-high, #a8301f);
+}
+
+/* 刻度：機率是 10 的幾次方 */
+.scale {
+	display: grid;
+	gap: 0.35rem;
+	padding-inline: 0.5rem;
+	container-type: inline-size;
+}
+
+.scaleTrack {
+	position: relative;
+	height: 1.1rem;
+	margin-top: 2.6rem;
+	border: 1.5px solid var(--llm-bar-neutral-edge, #7c879e);
+	border-radius: 0.3rem;
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 22%, transparent);
+}
+
+/* 兩種格式都存得下的範圍（刻度底色，圖例也用） */
+.zoneOk {
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 22%, transparent);
+}
+
+.zone32,
+.zone64 {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+}
+
+.zone32 {
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 45%, transparent);
+}
+
+.zone64 {
+	right: 0;
+	background: repeating-linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--llm-output, #ff6f5e) 55%, transparent) 0 5px,
+		color-mix(in srgb, var(--llm-output, #ff6f5e) 25%, transparent) 5px 10px
+	);
+}
+
+.wall {
+	position: absolute;
+	top: -0.35rem;
+	bottom: -0.35rem;
+	width: 0;
+	border-inline-start: 2px solid var(--llm-ink, #1e2a44);
+}
+
+/* 目前的真正機率：一個點，上面標數字 */
+.marker {
+	position: absolute;
+	top: 50%;
+	width: 1.05rem;
+	height: 1.05rem;
+	border: 2.5px solid var(--llm-card, #ffffff);
+	border-radius: 50%;
+	background: var(--sl-color-text-accent, #5b4bd6);
+	transform: translate(-50%, -50%);
+	transition: left 0.25s ease;
+}
+
+.markerLabel {
+	position: absolute;
+	bottom: calc(100% + 0.45rem);
+	padding: 0.05rem 0.4rem;
+	border-radius: 0.3rem;
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	white-space: nowrap;
+	transition: left 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.marker,
+	.markerLabel {
+		transition: none;
+	}
+}
+
+.ticks {
+	position: relative;
+	height: 1.5rem;
+}
+
+.tick {
+	position: absolute;
+	top: 0;
+	transform: translateX(-50%);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	color: var(--llm-ink-muted, #4f5a73);
+	white-space: nowrap;
+}
+
+.tick:first-child {
+	transform: none;
+}
+
+.tick:last-child {
+	transform: translateX(-100%);
+}
+
+/* 刻度太窄時，只留一半的刻度數字，避免擠在一起 */
+@container (max-width: 26rem) {
+	.tickMinor {
+		visibility: hidden;
+	}
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.table th,
+.table td {
+	padding: 0.2rem 0.35rem;
+	border: 0;
+	border-bottom: 1px solid var(--llm-border, #e6dcc8);
+	text-align: end;
+	white-space: nowrap;
+}
+
+/* 表頭可以折行，手機上欄寬由數字決定，四欄才放得下 */
+.table th {
+	font-size: var(--sl-text-xs, 0.8125rem);
+	line-height: 1.3;
+	white-space: normal;
+	word-break: keep-all; /* 只在空白處折行：「float64 連乘」折成兩行，不會把「連乘」拆開 */
+	vertical-align: bottom;
+}
+
+.table td {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.table tr.rowNow td {
+	background: color-mix(in srgb, var(--sl-color-text-accent, #5b4bd6) 10%, transparent);
+	font-weight: 700;
+}
