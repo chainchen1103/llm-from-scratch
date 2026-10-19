@@ -1,0 +1,792 @@
+/*
+ * EP03 互動元件（MatmulStepper、QueryScoreDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 Starlight 的 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * 藍色（向量）是左邊矩陣的列、查詢向量 q；紫色（注意力）是右邊矩陣的欄、key；綠色（FFN）是權重。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 線條、框線用原色，文字用對比夠的那一階；深色模式（預設）直接用原色 */
+	--ep03-a: var(--llm-vector, #4ea3f5);
+	--ep03-a-text: var(--llm-vector, #4ea3f5);
+	--ep03-b: var(--llm-attention, #7a6af0);
+	/* 深色模式的紫字：--sl-color-purple-high 太接近一般文字的顏色，混一點原色才看得出是紫色（對比仍約 6:1） */
+	--ep03-b-text: color-mix(in srgb, var(--llm-attention, #7a6af0) 50%, var(--sl-color-purple-high, #d3cdff));
+	--ep03-w: var(--llm-ffn, #22b88a);
+	--ep03-bad-text: var(--llm-output, #ff6f5e);
+	/* 正在算的那一格：深色模式用實心黃底＋深色字，半透明的黃疊在深色底上會變暗 */
+	--ep03-current-bg: var(--llm-token, #ffc24a);
+	--ep03-current-ink: var(--llm-on-token, #1e2a44);
+
+	/* 矩陣格子的大小 */
+	--ep03-cell-w: 2.75rem;
+	--ep03-cell-h: 2.4rem;
+	--ep03-block-gap: 0.6rem;
+}
+
+/* 淺色模式：白底上改用深一階的藍、紫，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep03-a: var(--llm-vector-deep, #2b7fd6);
+	--ep03-a-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep03-b: var(--llm-attention, #7a6af0);
+	--ep03-b-text: var(--llm-attention-deep, #5b4bd6);
+	--ep03-w: var(--llm-ffn-deep, #139670);
+	--ep03-bad-text: var(--sl-color-red-high, #a8301f);
+	--ep03-current-bg: color-mix(in srgb, var(--llm-token, #ffc24a) 55%, transparent);
+	--ep03-current-ink: var(--llm-ink, #1e2a44);
+}
+
+@media (max-width: 30rem) {
+	.demo {
+		--ep03-cell-w: 2.5rem;
+		--ep03-cell-h: 2.25rem;
+		--ep03-block-gap: 0.45rem;
+	}
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p,
+.demo ul {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ‖v‖：用雙線邊框畫兩條直線（等寬字型的「‖」是全形，會把字距撐得很開） */
+.norm {
+	display: inline-block;
+	padding-inline: 0.14em;
+	border-inline: 3px double currentColor;
+	line-height: 1.05;
+}
+
+/* 說明文字裡的數字、程式片段：不要從中間折行 */
+.num {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.demo sub {
+	font-size: 0.72em;
+	line-height: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.scroll {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/* ---------- 按鈕 ---------- */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip,
+.button {
+	min-height: 2.25rem;
+	padding: 0.25rem 0.85rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+/* 例子按鈕的第二行：形狀 */
+.chipSub {
+	margin-inline-start: 0.4rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+	opacity: 0.85;
+}
+
+.primary {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.button:disabled,
+.button[aria-disabled='true'],
+.chip:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.chip:focus-visible,
+.button:focus-visible,
+.input:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* ---------- 訊息框 ---------- */
+.ok,
+.note,
+.error {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.error {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 14%, transparent);
+}
+
+.bad {
+	color: var(--ep03-bad-text);
+	font-weight: 700;
+}
+
+.badge {
+	padding: 0 0.45rem;
+	border-radius: 0.35rem;
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.textA {
+	color: var(--ep03-a-text);
+	font-weight: 700;
+}
+
+.textB {
+	color: var(--ep03-b-text);
+	font-weight: 700;
+}
+
+.textQ {
+	color: var(--ep03-a-text);
+	font-weight: 700;
+}
+
+/* ================= MatmulStepper ================= */
+
+/* 形狀：(2, 3) @ (3, 2) → (2, 2)，中間的 3 用括號標「必須相同」 */
+.shapeBox {
+	display: grid;
+	gap: 0.35rem;
+	padding: 0.75rem 0.9rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.shapeLine {
+	padding-bottom: 0.8rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(1rem, 4.3vw, 1.25rem);
+	font-weight: 700;
+	/* 行高留大一點：太窄要折行時，「必須相同」才不會壓到第二行 */
+	line-height: 2.6;
+}
+
+.same {
+	position: relative;
+	display: inline-block;
+	padding-inline: 0.15rem;
+	line-height: 1.5;
+	border: 2px solid var(--llm-token, #ffc24a);
+	border-top: 0;
+	border-radius: 0 0 0.3rem 0.3rem;
+}
+
+.same::after {
+	content: attr(data-label);
+	position: absolute;
+	top: calc(100% + 0.1rem);
+	left: 50%;
+	transform: translateX(-50%);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.dimN {
+	display: inline-block;
+	min-width: 1.2em;
+	padding-inline: 0.15em;
+	border-radius: 0.25rem;
+	background: var(--ep03-current-bg);
+	color: var(--ep03-current-ink);
+	text-align: center;
+}
+
+.dimM {
+	color: var(--ep03-a-text);
+}
+
+.dimP {
+	color: var(--ep03-b-text);
+}
+
+.arrow {
+	padding-inline-end: 0.1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+}
+
+/* 三個矩陣排在同一個 grid：左邊的矩陣在左下、右邊的在右上、C 在右下 */
+.mgrid {
+	position: relative;
+	display: grid;
+	gap: 0.3rem;
+	justify-content: start;
+	align-items: center;
+	width: max-content;
+	margin-inline: auto;
+	padding: 0.25rem;
+}
+
+.matName {
+	align-self: end;
+	justify-self: center;
+	padding-block: 0.1rem;
+	font-weight: 700;
+	line-height: 1.3;
+	white-space: nowrap;
+}
+
+.matShape {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+}
+
+/* Python 的索引 */
+.idx {
+	justify-self: center;
+	min-width: 1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	line-height: 1.2;
+	text-align: center;
+}
+
+.idxA {
+	color: var(--ep03-a-text);
+	font-weight: 700;
+}
+
+.idxB {
+	color: var(--ep03-b-text);
+	font-weight: 700;
+}
+
+.cell {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.4rem;
+	background: var(--llm-card, #ffffff);
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease;
+}
+
+/* 用到的那一列（藍）、那一欄（紫） */
+.cellA {
+	border-color: var(--ep03-a);
+	background: color-mix(in srgb, var(--llm-vector, #4ea3f5) 26%, var(--llm-card, #ffffff));
+}
+
+.cellB {
+	border-color: var(--ep03-b);
+	background: color-mix(in srgb, var(--llm-attention, #7a6af0) 26%, var(--llm-card, #ffffff));
+}
+
+/* C：還沒算、算好了、正在算 */
+.cellPending {
+	border-style: dashed;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-weight: 400;
+}
+
+.cellDone {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+}
+
+.cellCurrent {
+	border-color: var(--llm-token, #ffc24a);
+	background: var(--ep03-current-bg);
+	color: var(--ep03-current-ink);
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* 列一路延伸到 C 的那一格、欄一路延伸到 C 的那一格：在格子後面的淡色帶 */
+.bandRow,
+.bandCol {
+	z-index: 0;
+	align-self: stretch;
+	justify-self: stretch;
+	margin: -0.15rem;
+	border-radius: 0.55rem;
+}
+
+.bandRow {
+	background: color-mix(in srgb, var(--llm-vector, #4ea3f5) 18%, transparent);
+}
+
+.bandCol {
+	background: color-mix(in srgb, var(--llm-attention, #7a6af0) 18%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cell {
+		transition: none;
+	}
+}
+
+/* 這一格的算式 */
+.formulaBox {
+	display: grid;
+	gap: 0.2rem;
+	min-height: 7.5rem;
+	align-content: start;
+	padding: 0.75rem 0.9rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.calc {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.95rem, 3.6vw, 1.05rem);
+	line-height: 1.55;
+}
+
+.calcResult {
+	font-size: 1.15em;
+}
+
+.count {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.countNum {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: 1.5rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+/* ================= QueryScoreDemo ================= */
+
+.kName {
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.kName sub {
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+	font-style: normal;
+}
+
+/* 座標圖在左、分數在右；放不下就上下排 */
+.qsLayout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 1rem 1.25rem;
+}
+
+.plotCol {
+	flex: 3 1 19rem;
+	display: grid;
+	gap: 0.5rem;
+	min-width: 0;
+	max-width: 28rem;
+}
+
+.plotWrap {
+	min-width: 0;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	touch-action: none; /* 在圖上拖動 q 時不要捲動頁面 */
+	user-select: none;
+	-webkit-user-select: none;
+	cursor: crosshair;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 13px;
+}
+
+.gridLine {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.axisLine {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.5px;
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisArrow {
+	fill: var(--llm-ink-muted, #4f5a73);
+}
+
+.axisName {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+.key line,
+.keyBest line,
+.query line {
+	stroke-linecap: round;
+}
+
+.key line {
+	stroke: var(--ep03-b);
+	stroke-width: 2.5px;
+}
+
+.key path {
+	fill: var(--ep03-b);
+}
+
+.key text {
+	fill: var(--ep03-b-text);
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+	font-size: 16px;
+	font-weight: 700;
+}
+
+/* 分數最高的 key：加粗 */
+.keyBest line {
+	stroke: var(--ep03-b);
+	stroke-width: 5px;
+}
+
+.keyBest path {
+	fill: var(--ep03-b);
+}
+
+.keyBest text {
+	fill: var(--ep03-b-text);
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+	font-size: 19px;
+	font-weight: 900;
+}
+
+.key text tspan,
+.keyBest text tspan {
+	font-family: 'KaTeX_Main', 'Times New Roman', serif;
+	font-style: normal;
+}
+
+.query line {
+	stroke: var(--ep03-a);
+	stroke-width: 3.5px;
+}
+
+.query path {
+	fill: var(--ep03-a);
+}
+
+.qLabel {
+	fill: var(--ep03-a-text);
+	font-family: 'KaTeX_Math', 'Times New Roman', serif;
+	font-style: italic;
+	font-weight: 700;
+}
+
+.plot .qLabel {
+	font-size: 18px;
+}
+
+/* 拖動用的把手：尖端後面的淡色圓，外面一圈看不到、比較大的觸控範圍 */
+.handle {
+	fill: color-mix(in srgb, var(--llm-vector, #4ea3f5) 22%, transparent);
+	stroke: var(--ep03-a);
+	stroke-width: 1.5px;
+	pointer-events: none;
+}
+
+.handleHit {
+	fill: transparent;
+	cursor: grab;
+}
+
+.plot:active .handleHit {
+	cursor: grabbing;
+}
+
+/* 拉長／放大之前的尖端 */
+.ghostKey,
+.ghostQ {
+	fill: var(--llm-card, #ffffff);
+	stroke-width: 2px;
+	pointer-events: none;
+}
+
+.ghostKey {
+	stroke: var(--ep03-b);
+}
+
+.ghostQ {
+	stroke: var(--ep03-a);
+}
+
+/* q 的數字輸入 */
+.qInputs {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.05rem;
+}
+
+.input {
+	width: 4.25rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.4rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.4rem;
+	background: var(--llm-card, #ffffff);
+	color: inherit;
+	font: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+}
+
+/* 右邊：4 張分數卡 */
+.readout {
+	flex: 2 1 13rem;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.6rem;
+	align-content: start;
+	min-width: 0;
+}
+
+.keyList {
+	display: grid;
+	gap: 0.5rem;
+	padding: 0;
+	list-style: none;
+}
+
+.keyList > li {
+	margin: 0;
+}
+
+.keyCard {
+	display: grid;
+	gap: 0.15rem;
+	padding: 0.45rem 0.65rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.55rem;
+}
+
+.keyCardBest {
+	border-color: var(--ep03-b);
+	box-shadow: inset 4px 0 0 var(--ep03-b);
+}
+
+.keyHead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0 0.5rem;
+}
+
+.keyHead .kName {
+	font-size: 1.1rem;
+	color: var(--ep03-b-text);
+}
+
+.calcSmall {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: var(--sl-text-sm, 0.875rem);
+	line-height: 1.5;
+}
+
+.barRow {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.15rem;
+}
+
+.bar {
+	position: relative;
+	flex: 1 1 auto;
+	height: 0.85rem;
+	border: 1px solid var(--llm-bar-neutral-edge, #7c879e);
+	border-radius: 0.25rem;
+	background: var(--llm-track, #f3ecdd);
+	overflow: hidden;
+}
+
+.barFill,
+.barGhost {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+}
+
+.barFill {
+	background: var(--ep03-w);
+	transition: width 0.2s ease;
+}
+
+/* 還沒拉長／放大時的權重：虛線框 */
+.barGhost {
+	z-index: 1;
+	border: 2px dashed var(--llm-ink, #1e2a44);
+	border-radius: 0.2rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.barFill {
+		transition: none;
+	}
+}
+
+.pct {
+	flex: none;
+	min-width: 3.6rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	text-align: end;
+}

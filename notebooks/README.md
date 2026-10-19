@@ -13,6 +13,8 @@ notebooks/
 │   └── ep01_numpy_shapes.ipynb
 ├── ep02/
 │   └── ep02_math_language.ipynb
+├── ep03/
+│   └── ep03_vectors_matrices.ipynb
 └── ...
 ```
 

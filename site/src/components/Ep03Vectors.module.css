@@ -1,0 +1,768 @@
+/*
+ * EP03 互動元件（DotProductDemo、LinearMapDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 兩支向量（或矩陣的兩欄）、影子的正負：深色模式（預設）直接用原色 */
+	--ep03-a: var(--llm-vector, #4ea3f5);
+	--ep03-a-text: var(--llm-vector, #4ea3f5);
+	--ep03-b: var(--llm-attention, #7a6af0);
+	--ep03-b-text: var(--sl-color-purple-high, #d3cdff);
+	--ep03-pos: var(--llm-ffn, #22b88a);
+	--ep03-pos-text: var(--sl-color-green-high, #a6ebd3);
+	--ep03-neg: var(--llm-output, #ff6f5e);
+	--ep03-neg-text: var(--sl-color-red-high, #ffc4bc);
+	--ep03-point: var(--llm-output, #ff6f5e);
+	--ep03-point-edge: var(--llm-output-deep, #e04e3e);
+	--ep03-area: var(--llm-token, #ffc24a);
+	--ep03-grid-mapped: var(--llm-vector, #4ea3f5);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep03-a: var(--llm-vector-deep, #2b7fd6);
+	--ep03-a-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep03-b: var(--llm-attention, #7a6af0);
+	--ep03-b-text: var(--llm-attention-deep, #5b4bd6);
+	--ep03-pos: var(--llm-ffn-deep, #139670);
+	--ep03-pos-text: var(--sl-color-green-high, #0b654b);
+	--ep03-neg: var(--llm-output-deep, #e04e3e);
+	--ep03-neg-text: var(--sl-color-red-high, #a8301f);
+	--ep03-grid-mapped: var(--llm-vector-deep, #2b7fd6);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* ---------- 按鈕 ---------- */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	padding: 0.25rem 0.85rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+/* 「放大 b」是動作，不是切換：用虛線框和其他按鈕區分 */
+.chipAction {
+	border-style: dashed;
+}
+
+.chip:disabled,
+.chip[aria-disabled='true'] {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.chip:focus-visible,
+.num:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* ---------- 數字輸入 ---------- */
+.num {
+	width: 4.6rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.numA {
+	border-color: var(--ep03-a);
+	border-inline-start-width: 4px;
+}
+
+.numB {
+	border-color: var(--ep03-b);
+	border-inline-start-width: 4px;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+/* ---------- 座標圖與右邊的數字 ---------- */
+.layout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 1rem 1.25rem;
+}
+
+.plotWrap {
+	flex: 1 1 20rem;
+	max-width: 26rem;
+	min-width: 0;
+	display: grid;
+	gap: 0.35rem;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	/* 只有可拖的座標圖不讓手指捲動頁面 */
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.grab {
+	cursor: grab;
+}
+
+.grabbing {
+	cursor: grabbing;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 14px;
+}
+
+/* 含「·」的標籤用等寬字型（中文字型的「·」是全形的大圓點） */
+.plot .svgMono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 13px;
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+/* 線性變換：原本的格線用淡灰色，和藍色的變換後格線區分 */
+.gridOrig {
+	stroke: var(--llm-bar-neutral-edge, #7c879e);
+	stroke-width: 1px;
+	opacity: 0.35;
+}
+
+.axis {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.5px;
+}
+
+.axisArrow {
+	fill: var(--llm-ink-muted, #4f5a73);
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisName {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+/* 箭頭 */
+.shaftA,
+.shaftB {
+	stroke-width: 3.5px;
+	stroke-linecap: round;
+}
+
+.shaftA {
+	stroke: var(--ep03-a);
+}
+
+.shaftB {
+	stroke: var(--ep03-b);
+}
+
+.headA {
+	fill: var(--ep03-a);
+}
+
+.headB {
+	fill: var(--ep03-b);
+}
+
+/* 可拖的尖端：淡色圓圈標出可以抓的範圍 */
+.handleA,
+.handleB {
+	stroke-width: 1.5px;
+}
+
+.handleA {
+	fill: color-mix(in srgb, var(--ep03-a) 22%, transparent);
+	stroke: color-mix(in srgb, var(--ep03-a) 70%, transparent);
+}
+
+.handleB {
+	fill: color-mix(in srgb, var(--ep03-b) 22%, transparent);
+	stroke: color-mix(in srgb, var(--ep03-b) 70%, transparent);
+}
+
+/* 零向量：只在原點畫一個點 */
+.tipA,
+.tipB {
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.tipA {
+	fill: var(--ep03-a);
+}
+
+.tipB {
+	fill: var(--ep03-b);
+}
+
+.tipRing {
+	fill: none;
+	stroke: var(--sl-color-text-accent, #5b4bd6);
+	stroke-width: 2px;
+	stroke-dasharray: 3 3;
+}
+
+.labelA,
+.labelB {
+	font-weight: 700;
+}
+
+.plot .labelA,
+.plot .labelB {
+	font-size: 16px;
+}
+
+.labelA {
+	fill: var(--ep03-a-text);
+}
+
+.labelB {
+	fill: var(--ep03-b-text);
+}
+
+/* a 所在的直線 */
+.aLine {
+	stroke: var(--ep03-a);
+	stroke-width: 1.5px;
+	stroke-dasharray: 2 5;
+	stroke-linecap: round;
+	opacity: 0.8;
+}
+
+/* b 的尖端垂直落到 a 的直線上 */
+.perp {
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 2px;
+	stroke-dasharray: 0.5 5;
+	stroke-linecap: round;
+}
+
+.rightAngle {
+	fill: none;
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.5px;
+}
+
+/* 影子：正的用實線綠色，負的用虛線珊瑚色 */
+.shadowPos,
+.shadowNeg {
+	stroke-width: 7px;
+	stroke-linecap: butt;
+}
+
+.shadowPos {
+	stroke: var(--ep03-pos);
+}
+
+.shadowNeg {
+	stroke: var(--ep03-neg);
+	stroke-dasharray: 7 4;
+}
+
+.shadowPosText {
+	fill: var(--ep03-pos-text);
+	font-weight: 700;
+}
+
+.shadowNegText {
+	fill: var(--ep03-neg-text);
+	font-weight: 700;
+}
+
+.arc {
+	fill: none;
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.75px;
+}
+
+.arcText {
+	fill: var(--llm-ink, #1e2a44);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.hint {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+/* ---------- 右邊的數字 ---------- */
+.readout {
+	flex: 1 1 15rem;
+	display: grid;
+	gap: 0.75rem;
+	align-content: start;
+	min-width: 0;
+}
+
+.vecRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+/* ‖a‖：用雙線邊框畫兩條直線（有些字型的「‖」是全形，會把字距撐得很開） */
+.norm {
+	display: inline-block;
+	padding-inline: 0.14em;
+	border-inline: 3px double currentColor;
+	line-height: 1.05;
+	font-style: italic;
+}
+
+.nameA,
+.nameB {
+	font-weight: 700;
+	font-style: italic;
+	font-size: 1.1em;
+}
+
+.nameA {
+	color: var(--ep03-a-text);
+}
+
+.nameB {
+	color: var(--ep03-b-text);
+}
+
+.textA {
+	color: var(--ep03-a-text);
+	font-weight: 700;
+}
+
+.textB {
+	color: var(--ep03-b-text);
+	font-weight: 700;
+}
+
+.textPos {
+	color: var(--ep03-pos-text);
+	font-weight: 700;
+}
+
+.textNeg {
+	color: var(--ep03-neg-text);
+	font-weight: 700;
+}
+
+.calc {
+	display: grid;
+	gap: 0.15rem;
+	padding: 0.6rem 0.85rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.calcTitle {
+	margin-block-end: 0.15rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+/* 一行算式：太長時只在 span 之間折行 */
+.deriv,
+.rhs {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 0.45em;
+}
+
+.deriv > span,
+.rhs > span {
+	white-space: nowrap;
+}
+
+.deriv,
+.derivGrid {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.9rem, 3.4vw, 1rem);
+}
+
+/* 並排的兩個數字（例如兩個長度）：中間多空一點 */
+.pair {
+	column-gap: 1.4em;
+}
+
+/* 推導：左邊一欄放等號左邊的式子，之後每一行的「=」都對齊在右邊那一欄的開頭 */
+.derivGrid {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	column-gap: 0.45em;
+}
+
+.result {
+	font-weight: 700;
+	color: var(--llm-ink, #1e2a44);
+}
+
+.big {
+	font-size: 1.15em;
+}
+
+/* 幾段文字疊在同一格、只顯示一段：高度固定是最長的那段，換文字時下面的圖不會跳動 */
+.stackText {
+	display: grid;
+}
+
+.stackText > * {
+	grid-area: 1 / 1;
+}
+
+.stackHidden {
+	visibility: hidden;
+}
+
+/* ---------- 線性變換：版面 ---------- */
+.stack {
+	display: grid;
+	gap: 1rem;
+}
+
+.plotCenter {
+	display: grid;
+	gap: 0.35rem;
+	width: 100%;
+	max-width: 30rem;
+	margin-inline: auto;
+}
+
+.readoutCols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	align-items: start;
+	gap: 0.75rem 1.25rem;
+}
+
+/* ---------- 線性變換：格線與圖形 ---------- */
+.gridMapped {
+	stroke: var(--ep03-grid-mapped);
+	stroke-width: 1.25px;
+	stroke-linecap: round;
+	opacity: 0.45;
+}
+
+.gridMappedAxis {
+	stroke: var(--ep03-grid-mapped);
+	stroke-width: 2px;
+	stroke-linecap: round;
+	opacity: 0.75;
+}
+
+.unitSquare {
+	fill: none;
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.5px;
+	stroke-dasharray: 4 4;
+}
+
+.area {
+	fill: color-mix(in srgb, var(--ep03-area) 38%, transparent);
+	stroke: var(--ep03-area);
+	stroke-width: 2px;
+	stroke-linejoin: round;
+}
+
+.pathA,
+.pathB {
+	fill: none;
+	stroke-width: 2px;
+	stroke-dasharray: 6 4;
+	stroke-linecap: round;
+}
+
+.pathA {
+	stroke: var(--ep03-a);
+}
+
+.pathB {
+	stroke: var(--ep03-b);
+}
+
+.pointOrig {
+	fill: var(--llm-card, #ffffff);
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 2px;
+}
+
+.pointMapped {
+	fill: var(--ep03-point);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.pointOrigText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-weight: 700;
+}
+
+.pointMappedText {
+	fill: var(--ep03-neg-text);
+	font-weight: 700;
+}
+
+.edgeMarker {
+	fill: var(--ep03-point);
+}
+
+/* ---------- 線性變換：矩陣 ---------- */
+.matrixRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.matrixName {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.1em;
+	font-style: italic;
+	font-weight: 700;
+}
+
+/* 方陣：左右兩條直括號 */
+.matrix {
+	display: grid;
+	grid-template-columns: auto auto;
+	gap: 0.4rem 0.5rem;
+	padding: 0.35rem 0.45rem;
+	border-inline: 2px solid var(--llm-ink, #1e2a44);
+	border-radius: 0.4rem;
+}
+
+.colLegend {
+	display: grid;
+	gap: 0.2rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.colLegendItem {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4rem;
+}
+
+.colLegendItem > span:last-child {
+	min-width: 0;
+}
+
+.swatchA,
+.swatchB {
+	flex: none;
+	display: inline-block;
+	width: 0.8rem;
+	height: 0.8rem;
+	border-radius: 0.2rem;
+	transform: translateY(0.1rem);
+}
+
+.swatchA {
+	background: var(--ep03-a);
+}
+
+.swatchB {
+	background: var(--ep03-b);
+}
+
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.2rem 0.9rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.legendGrid,
+.legendMapped,
+.legendArea,
+.legendPoint {
+	flex: none;
+	display: inline-block;
+}
+
+.legendGrid,
+.legendMapped {
+	width: 1rem;
+	height: 0;
+	border-block-start: 2px solid var(--llm-border, #e6dcc8);
+}
+
+.legendGrid {
+	border-color: color-mix(in srgb, var(--llm-bar-neutral-edge, #7c879e) 60%, transparent);
+}
+
+.legendMapped {
+	border-color: var(--ep03-grid-mapped);
+}
+
+.legendArea {
+	width: 0.9rem;
+	height: 0.9rem;
+	border: 2px solid var(--ep03-area);
+	background: color-mix(in srgb, var(--ep03-area) 38%, transparent);
+}
+
+.legendPoint {
+	width: 0.75rem;
+	height: 0.75rem;
+	border-radius: 50%;
+	background: var(--ep03-point);
+}
