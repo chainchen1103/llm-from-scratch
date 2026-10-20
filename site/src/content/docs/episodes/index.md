@@ -12,5 +12,6 @@ sidebar:
 | EP01 | [開發環境與 NumPy 入門](/episodes/ep01/) | [影片](https://youtu.be/s8xf_ct7HvI)、圖文教學、notebook、互動元件 |
 | EP02 | [數學語言：函數、指數與對數、Σ 符號](/episodes/ep02/) | 圖文教學、notebook、互動元件（影片製作中） |
 | EP03 | [向量與矩陣：內積、矩陣乘法、線性變換](/episodes/ep03/) | 圖文教學、notebook、互動元件（影片製作中） |
+| EP04 | [導數與梯度：從斜率到梯度](/episodes/ep04/) | 圖文教學、notebook、互動元件（影片製作中） |
 
 每一集推出後，都會依序出現在側欄的「課程」分類裡。想先看看整個系列會教哪些內容，可以到[學習路線](/roadmap/)瀏覽全部 62 集的規劃。

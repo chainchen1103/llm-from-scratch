@@ -15,6 +15,8 @@ notebooks/
 │   └── ep02_math_language.ipynb
 ├── ep03/
 │   └── ep03_vectors_matrices.ipynb
+├── ep04/
+│   └── ep04_derivatives_gradients.ipynb
 └── ...
 ```
 

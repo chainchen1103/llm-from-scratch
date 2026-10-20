@@ -1,0 +1,702 @@
+/*
+ * EP04 互動元件（GradientFieldDemo、DirectionalDerivativeDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * 梯度一律用珊瑚色、單位向量 u 用藍色、經過 P 的等高線用紫色。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 深色模式（預設）直接用原色 */
+	--ep04-grad: var(--llm-output, #ff6f5e);
+	--ep04-grad-text: var(--sl-color-red-high, #ffc4bc);
+	--ep04-u: var(--llm-vector, #4ea3f5);
+	--ep04-u-text: var(--llm-vector, #4ea3f5);
+	--ep04-level: var(--llm-attention, #7a6af0);
+	--ep04-level-text: var(--sl-color-purple-high, #d3cdff);
+	--ep04-contour: var(--llm-bar-neutral-edge, #8a96b1);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep04-grad: var(--llm-output-deep, #e04e3e);
+	--ep04-grad-text: var(--sl-color-red-high, #a8301f);
+	--ep04-u: var(--llm-vector-deep, #2b7fd6);
+	--ep04-u-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep04-level: var(--llm-attention, #7a6af0);
+	--ep04-level-text: var(--llm-attention-deep, #5b4bd6);
+	--ep04-contour: var(--llm-bar-neutral-edge, #7c879e);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* ---------- 按鈕 ---------- */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	padding: 0.25rem 0.85rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+/* 開關（例如「顯示格點上的梯度」）：虛線框，和選點的按鈕區分 */
+.chipToggle {
+	border-style: dashed;
+}
+
+.chip:focus-visible,
+.num:focus-visible,
+.slider:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* ---------- 數字輸入 ---------- */
+.inputRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+.num {
+	width: 5rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-inline-start: 4px solid var(--llm-ink-muted, #4f5a73);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.pName {
+	font-weight: 700;
+	font-style: italic;
+	font-size: 1.1em;
+}
+
+/* ---------- 滑桿 ---------- */
+.sliderHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	color: var(--ep04-u-text);
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--ep04-u);
+	cursor: pointer;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+/* ---------- 座標圖與右邊的數字 ---------- */
+.layout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 1rem 1.25rem;
+}
+
+.plotWrap {
+	flex: 1 1 20rem;
+	max-width: 26rem;
+	min-width: 0;
+	display: grid;
+	gap: 0.35rem;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	/* 只有可拖的圖不讓手指捲動頁面 */
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	cursor: crosshair;
+}
+
+.grab {
+	cursor: grab;
+}
+
+.grabbing {
+	cursor: grabbing;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 14px;
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.axis {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.5px;
+}
+
+.axisArrow {
+	fill: var(--llm-ink-muted, #4f5a73);
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisName {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+/* 等高線：灰色細線；高度數字是小字 */
+.contour {
+	fill: none;
+	stroke: var(--ep04-contour);
+	stroke-width: 1.25px;
+	opacity: 0.75;
+}
+
+.plot .contourText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+/* 經過 P 的等高線：紫色粗線 */
+.level {
+	fill: none;
+	stroke: var(--ep04-level);
+	stroke-width: 2.5px;
+}
+
+.levelText {
+	fill: var(--ep04-level-text);
+	font-weight: 700;
+}
+
+/* 梯度箭頭 */
+.gradShaft {
+	stroke: var(--ep04-grad);
+	stroke-width: 3.5px;
+	stroke-linecap: round;
+}
+
+.gradHead {
+	fill: var(--ep04-grad);
+}
+
+.gradText {
+	fill: var(--ep04-grad-text);
+	font-weight: 700;
+}
+
+/* 方向導數的圖：梯度和 u 重疊時，細的梯度疊在粗的 u 上面 */
+.gradShaft.gradThin {
+	stroke-width: 3px;
+}
+
+.uShaft.uWide {
+	stroke-width: 5.5px;
+}
+
+/* 兩個偏導數：梯度的 x、y 分量，珊瑚色虛線 */
+.partial {
+	stroke: var(--ep04-grad);
+	stroke-width: 2px;
+	stroke-dasharray: 4 3;
+	stroke-linecap: butt;
+}
+
+.plot .partialText {
+	fill: var(--ep04-grad-text);
+	font-size: 13px;
+}
+
+/* 格點上的梯度（淡色） */
+.quiverShaft {
+	stroke: var(--ep04-grad);
+	stroke-width: 1.75px;
+	stroke-linecap: round;
+	opacity: 0.5;
+}
+
+.quiverHead {
+	fill: var(--ep04-grad);
+	opacity: 0.5;
+}
+
+.quiverDot {
+	fill: var(--ep04-grad);
+	opacity: 0.6;
+}
+
+/* 單位向量 u */
+.uShaft {
+	stroke: var(--ep04-u);
+	stroke-width: 3.5px;
+	stroke-linecap: round;
+}
+
+.uHead {
+	fill: var(--ep04-u);
+}
+
+.uText {
+	fill: var(--ep04-u-text);
+	font-weight: 700;
+	font-style: italic;
+}
+
+.plot .uText {
+	font-size: 16px;
+}
+
+/* u 的尖端走的圓（半徑 1） */
+.track {
+	fill: none;
+	stroke: var(--ep04-u);
+	stroke-width: 1.25px;
+	stroke-dasharray: 3 4;
+	opacity: 0.6;
+}
+
+/* 可拖的東西：淡色圓圈標出可以抓的範圍 */
+.handle {
+	fill: color-mix(in srgb, var(--sl-color-text-accent, #5b4bd6) 18%, transparent);
+	stroke: color-mix(in srgb, var(--sl-color-text-accent, #5b4bd6) 65%, transparent);
+	stroke-width: 1.5px;
+}
+
+.handleU {
+	fill: color-mix(in srgb, var(--ep04-u) 22%, transparent);
+	stroke: color-mix(in srgb, var(--ep04-u) 70%, transparent);
+	stroke-width: 1.5px;
+}
+
+.ring {
+	fill: none;
+	stroke: var(--sl-color-text-accent, #5b4bd6);
+	stroke-width: 2px;
+	stroke-dasharray: 3 3;
+}
+
+.point {
+	fill: var(--llm-ink, #1e2a44);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.pointText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+	font-style: italic;
+}
+
+.plot .pointText {
+	font-size: 16px;
+}
+
+.rightAngle {
+	fill: none;
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.5px;
+}
+
+.arc {
+	fill: none;
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.75px;
+}
+
+.arcText {
+	fill: var(--llm-ink, #1e2a44);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.hint {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+/* ---------- 圖例 ---------- */
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem 0.9rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.swContour,
+.swLevel,
+.swGrad,
+.swPartial,
+.swU {
+	flex: none;
+	display: inline-block;
+	width: 1.1rem;
+	height: 0;
+}
+
+.swContour {
+	border-block-start: 1.5px solid var(--ep04-contour);
+}
+
+.swLevel {
+	border-block-start: 3px solid var(--ep04-level);
+}
+
+.swGrad {
+	border-block-start: 3.5px solid var(--ep04-grad);
+}
+
+.swPartial {
+	border-block-start: 2px dashed var(--ep04-grad);
+}
+
+.swU {
+	border-block-start: 3.5px solid var(--ep04-u);
+}
+
+/* ---------- 右邊的數字 ---------- */
+.readout {
+	flex: 1 1 15rem;
+	display: grid;
+	gap: 0.75rem;
+	align-content: start;
+	min-width: 0;
+}
+
+/* ‖v‖：用雙線邊框畫兩條直線（有些字型的「‖」是全形，會把字距撐得很開） */
+.norm {
+	display: inline-block;
+	padding-inline: 0.14em;
+	border-inline: 3px double currentColor;
+	line-height: 1.05;
+}
+
+.textGrad {
+	color: var(--ep04-grad-text);
+	font-weight: 700;
+}
+
+.textU {
+	color: var(--ep04-u-text);
+	font-weight: 700;
+}
+
+.textLevel {
+	color: var(--ep04-level-text);
+	font-weight: 700;
+}
+
+.calc {
+	display: grid;
+	gap: 0.15rem;
+	padding: 0.6rem 0.85rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.calcTitle {
+	margin-block-end: 0.15rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+/* 一行算式：太長時只在 span 之間折行 */
+.rhs {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 0.45em;
+}
+
+.rhs > span {
+	white-space: nowrap;
+}
+
+/* 推導：左邊一欄放等號左邊的式子，之後每一行的「=」都對齊在右邊那一欄的開頭 */
+.derivGrid {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.9rem, 3.4vw, 1rem);
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	column-gap: 0.45em;
+}
+
+.result {
+	font-weight: 700;
+	color: var(--llm-ink, #1e2a44);
+}
+
+.big {
+	font-size: 1.15em;
+}
+
+/* ---------- cos 波浪 ---------- */
+.waveWrap {
+	display: grid;
+	gap: 0.35rem;
+	min-width: 0;
+	margin-block-start: 0.85rem;
+}
+
+.waveCurve {
+	fill: none;
+	stroke: var(--ep04-u);
+	stroke-width: 2.5px;
+	stroke-linejoin: round;
+}
+
+.waveZero {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+}
+
+.waveGuide {
+	stroke: var(--ep04-grad);
+	stroke-width: 1.5px;
+	stroke-dasharray: 4 4;
+}
+
+.waveNow {
+	stroke: var(--ep04-u);
+	stroke-width: 1.5px;
+	stroke-dasharray: 2 3;
+}
+
+.waveDot {
+	fill: var(--ep04-u);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.waveMax {
+	fill: var(--ep04-grad);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2px;
+}
+
+.wavePerp {
+	fill: var(--llm-card, #ffffff);
+	stroke: var(--ep04-level);
+	stroke-width: 2.5px;
+}
+
+.plot .waveLabel {
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.waveLabelGrad {
+	fill: var(--ep04-grad-text);
+}
+
+.waveLabelLevel {
+	fill: var(--ep04-level-text);
+}
+
+.waveLabelU {
+	fill: var(--ep04-u-text);
+}
+
+/* 標籤後面的底色：等高線從字後面穿過時，字還是清楚 */
+.labelBg {
+	fill: var(--llm-card, #ffffff);
+	opacity: 0.88;
+}
+
+/* ---------- GradientFieldDemo：座標圖放大置中，數字排在下面 ---------- */
+.stack {
+	display: grid;
+	gap: 1rem;
+}
+
+.plotCenter {
+	display: grid;
+	gap: 0.35rem;
+	width: 100%;
+	max-width: 30rem;
+	margin-inline: auto;
+	min-width: 0;
+}
+
+.readoutCols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	align-items: start;
+	gap: 0.75rem 1.25rem;
+}
+
+/* 一行一個式子（窄的右欄用）：每行不折行，太長時在 span 之間折 */
+.lines {
+	display: grid;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.9rem, 3.4vw, 1rem);
+}
+
+.lines > span {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 0.45em;
+}
+
+.lines > span > span {
+	white-space: nowrap;
+}
