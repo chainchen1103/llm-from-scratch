@@ -1,0 +1,849 @@
+/*
+ * EP05 互動元件（JacobianWarpDemo、MultiplyOrderCostDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * JacobianWarpDemo：正方形和 F 變成的形狀用藍色（向量）實線，Jacobian 預測的平行四邊形用珊瑚色（輸出）虛線。
+ * MultiplyOrderCostDemo：從輸出端倒著乘用珊瑚色，從輸入端用灰色。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 深色模式（預設）直接用原色 */
+	--ep05-shape: var(--llm-vector, #4ea3f5);
+	--ep05-shape-text: var(--llm-vector, #4ea3f5);
+	--ep05-pred: var(--llm-output, #ff6f5e);
+	--ep05-pred-text: var(--sl-color-red-high, #ffc4bc);
+	--ep05-in: var(--llm-bar-neutral-edge, #8a96b1);
+	--ep05-in-text: var(--llm-ink-muted, #9aa4b9);
+	--ep05-current: var(--llm-token, #ffc24a);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep05-shape: var(--llm-vector-deep, #2b7fd6);
+	--ep05-shape-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep05-pred: var(--llm-output-deep, #e04e3e);
+	--ep05-pred-text: var(--sl-color-red-high, #a8301f);
+	--ep05-in: var(--llm-bar-neutral-edge, #7c879e);
+	--ep05-in-text: var(--llm-ink-muted, #4f5a73);
+	--ep05-current: var(--llm-token, #ffc24a);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* 一列控制項：標題在左、按鈕在右，太窄時折行 */
+.controlRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem 0.75rem;
+}
+
+.controlLabel {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* ---------- 按鈕 ---------- */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	min-width: 2.75rem;
+	padding: 0.25rem 0.8rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chipMono {
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+/* 手機寬度：一排數字按鈕擠得下一列 */
+@media (max-width: 30rem) {
+	.chipMono {
+		min-width: 2.4rem;
+		padding-inline: 0.5rem;
+	}
+
+	.chips:has(> .chipMono) {
+		gap: 0.35rem;
+	}
+}
+
+.chip:focus-visible,
+.num:focus-visible,
+.slider:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* ---------- 數字輸入 ---------- */
+.inputRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+.num {
+	width: 5rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-inline-start: 4px solid var(--llm-ink-muted, #4f5a73);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.numWide {
+	width: 6.5rem;
+}
+
+.numRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+}
+
+.pName {
+	font-weight: 700;
+	font-style: italic;
+	font-size: 1.1em;
+}
+
+/* ---------- 滑桿 ---------- */
+.sliderHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	cursor: pointer;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+/* ---------- 座標圖 ---------- */
+
+/* 兩張座標圖：寬的時候並排、一樣寬；窄的時候上下排 */
+.pair {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+	gap: 1rem 1.25rem;
+	align-items: start;
+}
+
+.panel {
+	display: grid;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.panelTitle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0 0.5rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+.panelTitle > span:last-child {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-weight: 400;
+}
+
+.zoom {
+	display: inline-block;
+	padding: 0 0.45rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--ep05-current) 30%, transparent);
+	color: var(--llm-ink, #1e2a44);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.plotWide {
+	display: grid;
+	gap: 0.35rem;
+	width: 100%;
+	max-width: 44rem;
+	min-width: 0;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 只有可拖的座標圖不讓手指捲動頁面 */
+.draggable {
+	touch-action: none;
+	cursor: crosshair;
+}
+
+.grab {
+	cursor: grab;
+}
+
+.grabbing {
+	cursor: grabbing;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 14px;
+}
+
+.plot .tickText {
+	font-size: 12.5px;
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.axis {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.5px;
+}
+
+.frameLine {
+	fill: none;
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+}
+
+.axisArrow {
+	fill: var(--llm-ink-muted, #4f5a73);
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisName {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+/* 標籤後面的底色：線從字後面穿過時，字還是清楚 */
+.labelBg {
+	fill: var(--llm-card, #ffffff);
+	opacity: 0.88;
+}
+
+/* 左圖：以 p 為中心的正方形 */
+.square {
+	fill: color-mix(in srgb, var(--ep05-shape) 22%, transparent);
+	stroke: var(--ep05-shape);
+	stroke-width: 2px;
+	stroke-linejoin: round;
+}
+
+/* 右圖：F 把正方形邊界變成的形狀（實線）與 Jacobian 預測的平行四邊形（虛線，畫在上面：兩條幾乎重合時，虛線的空隙裡還看得到實線） */
+.warped {
+	fill: color-mix(in srgb, var(--ep05-shape) 14%, transparent);
+	stroke: var(--ep05-shape);
+	stroke-width: 3px;
+	stroke-linejoin: round;
+}
+
+.para {
+	fill: none;
+	stroke: var(--ep05-pred);
+	stroke-width: 2.25px;
+	stroke-dasharray: 7 5;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+/* 最大距離：連接同一個 q 的兩個落點 */
+.gap {
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 2px;
+	stroke-linecap: round;
+}
+
+.gapDot {
+	fill: var(--llm-ink, #1e2a44);
+}
+
+.gapText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+}
+
+.plot .gapText {
+	font-size: 13px;
+}
+
+.corner {
+	fill: var(--llm-card, #ffffff);
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.75px;
+}
+
+/* 可拖的 p：淡色圓圈標出可以抓的範圍 */
+.handle {
+	fill: color-mix(in srgb, var(--sl-color-text-accent, #5b4bd6) 16%, transparent);
+	stroke: color-mix(in srgb, var(--sl-color-text-accent, #5b4bd6) 65%, transparent);
+	stroke-width: 1.5px;
+}
+
+.ring {
+	fill: none;
+	stroke: var(--sl-color-text-accent, #5b4bd6);
+	stroke-width: 2px;
+	stroke-dasharray: 3 3;
+}
+
+.point {
+	fill: var(--llm-ink, #1e2a44);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1.5px;
+}
+
+.pointText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+	font-style: italic;
+}
+
+.plot .pointText {
+	font-size: 16px;
+}
+
+.qText {
+	fill: var(--llm-ink, #1e2a44);
+	font-style: italic;
+	font-weight: 700;
+}
+
+.plot .qText {
+	font-size: 15px;
+}
+
+.hint {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+/* ---------- 圖例 ---------- */
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem 1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.swSquare,
+.swWarped,
+.swPara,
+.swGap,
+.swIn,
+.swOut {
+	flex: none;
+	display: inline-block;
+	width: 1.4rem;
+	height: 0;
+	border-block-start: 3px solid;
+}
+
+.swSquare {
+	height: 0.8rem;
+	width: 0.8rem;
+	border: 2px solid var(--ep05-shape);
+	background: color-mix(in srgb, var(--ep05-shape) 22%, transparent);
+}
+
+.swWarped {
+	border-color: var(--ep05-shape);
+}
+
+.swPara {
+	border-block-start-style: dashed;
+	border-color: var(--ep05-pred);
+}
+
+.swGap {
+	width: 0.9rem;
+	border-block-start-width: 2px;
+	border-color: var(--llm-ink, #1e2a44);
+}
+
+.swIn {
+	border-color: var(--ep05-in);
+}
+
+.swOut {
+	border-color: var(--ep05-pred);
+}
+
+/* ---------- 下面的數字 ---------- */
+.readoutCols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	align-items: start;
+	gap: 0.75rem 1.25rem;
+}
+
+.calc {
+	display: grid;
+	gap: 0.3rem;
+	padding: 0.6rem 0.85rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+	min-width: 0;
+}
+
+.calcTitle {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+/* 一行算式：太長時只在 span 之間折行 */
+.rhs {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	column-gap: 0.45em;
+	row-gap: 0.2rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.85rem, 3.4vw, 1rem);
+}
+
+.rhs > span {
+	white-space: nowrap;
+}
+
+/* 2 × 2 矩陣：左右兩條直括號（和 EP03 的矩陣一樣） */
+.matrix {
+	display: inline-grid;
+	grid-template-columns: auto auto;
+	gap: 0.05rem 0.7rem;
+	padding: 0.15rem 0.5rem;
+	border-inline: 2px solid var(--llm-ink, #1e2a44);
+	border-radius: 0.4rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	vertical-align: middle;
+}
+
+.matrix > span {
+	text-align: end;
+	white-space: nowrap;
+}
+
+.matName {
+	font-style: italic;
+	font-weight: 700;
+}
+
+.result {
+	font-weight: 700;
+	color: var(--llm-ink, #1e2a44);
+}
+
+.big {
+	font-size: 1.15em;
+}
+
+.shapeText {
+	color: var(--ep05-shape-text);
+	font-weight: 700;
+}
+
+.predText {
+	color: var(--ep05-pred-text);
+	font-weight: 700;
+}
+
+.inText {
+	color: var(--ep05-in-text);
+	font-weight: 700;
+}
+
+/* ---------- 表 ---------- */
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.8rem, 3.2vw, 0.9375rem);
+}
+
+.table caption {
+	margin-block-end: 0.25rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+	text-align: start;
+}
+
+.table th,
+.table td {
+	padding: 0.15rem 0.4rem;
+	border: 0;
+	text-align: end;
+	white-space: nowrap;
+}
+
+.table th {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	border-block-end: 1.5px solid var(--llm-border, #e6dcc8);
+}
+
+.table tr.current td {
+	background: color-mix(in srgb, var(--ep05-current) 30%, transparent);
+	font-weight: 700;
+}
+
+.table tr.current td:first-child {
+	border-start-start-radius: 0.3rem;
+	border-end-start-radius: 0.3rem;
+}
+
+.table tr.current td:last-child {
+	border-start-end-radius: 0.3rem;
+	border-end-end-radius: 0.3rem;
+}
+
+/* ---------- MultiplyOrderCostDemo ---------- */
+.costCard {
+	display: grid;
+	gap: 0.35rem;
+	padding: 0.7rem 0.9rem;
+	border-radius: 0.6rem;
+	border-inline-start: 5px solid;
+	background: var(--llm-track, #f3ecdd);
+	min-width: 0;
+	/* 兩張卡片並排時一樣高，內容靠上 */
+	align-self: stretch;
+	align-content: start;
+}
+
+.costIn {
+	border-color: var(--ep05-in);
+}
+
+.costOut {
+	border-color: var(--ep05-pred);
+}
+
+.costHead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0 0.5rem;
+}
+
+.costName {
+	font-weight: 700;
+}
+
+.bigNum {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(1.05rem, 4.4vw, 1.3rem);
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.unit {
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 400;
+}
+
+.ratioBox {
+	display: grid;
+	gap: 0.3rem;
+	padding: 0.7rem 0.9rem;
+	border-radius: 0.6rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+}
+
+.ratioNum {
+	font-size: clamp(1.3rem, 6vw, 1.7rem);
+	font-weight: 700;
+	color: var(--ep05-pred-text);
+}
+
+.ratioDigits {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+/* 對數刻度的累計圖 */
+.lineIn {
+	fill: none;
+	stroke: var(--ep05-in);
+	stroke-width: 2.75px;
+	stroke-linejoin: round;
+}
+
+.lineOut {
+	fill: none;
+	stroke: var(--ep05-pred);
+	stroke-width: 2.75px;
+	stroke-linejoin: round;
+}
+
+.dotIn,
+.dotOut {
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1.5px;
+}
+
+.dotIn {
+	fill: var(--ep05-in);
+}
+
+.dotOut {
+	fill: var(--ep05-pred);
+}
+
+.lineInText {
+	fill: var(--ep05-in-text);
+	font-weight: 700;
+}
+
+.lineOutText {
+	fill: var(--ep05-pred-text);
+	font-weight: 700;
+}
+
+.gapArrow {
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.75px;
+}
+
+.gapHead {
+	fill: var(--llm-ink, #1e2a44);
+}
+
+/* 手上拿的東西：d × d 的矩陣 vs 一列。每一個佔兩列（圖、說明），並排時兩張圖的底對齊、說明從同一個高度開始 */
+.holds {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+	gap: 0 1.25rem;
+}
+
+.hold {
+	display: grid;
+	grid-row: span 2;
+	grid-template-rows: subgrid;
+	gap: 0.35rem;
+	justify-items: start;
+	min-width: 0;
+	margin-block-end: 0.75rem;
+}
+
+.holdFig {
+	align-self: end;
+}
+
+.holdSvg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+.cellIn {
+	fill: color-mix(in srgb, var(--ep05-in) 30%, transparent);
+	stroke: var(--ep05-in);
+	stroke-width: 1px;
+}
+
+.cellOut {
+	fill: color-mix(in srgb, var(--ep05-pred) 30%, transparent);
+	stroke: var(--ep05-pred);
+	stroke-width: 1px;
+}
+
+.holdFrameIn,
+.holdFrameOut {
+	fill: none;
+	stroke-width: 2px;
+}
+
+.holdFrameIn {
+	stroke: var(--ep05-in);
+}
+
+.holdFrameOut {
+	stroke: var(--ep05-pred);
+}

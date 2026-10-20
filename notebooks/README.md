@@ -17,6 +17,8 @@ notebooks/
 │   └── ep03_vectors_matrices.ipynb
 ├── ep04/
 │   └── ep04_derivatives_gradients.ipynb
+├── ep05/
+│   └── ep05_chain_rule.ipynb
 └── ...
 ```
 
