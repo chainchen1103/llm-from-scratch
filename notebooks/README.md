@@ -19,6 +19,8 @@ notebooks/
 │   └── ep04_derivatives_gradients.ipynb
 ├── ep05/
 │   └── ep05_chain_rule.ipynb
+├── ep06/
+│   └── ep06_probability.ipynb
 └── ...
 ```
 

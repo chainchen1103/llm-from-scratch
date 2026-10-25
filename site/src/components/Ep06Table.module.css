@@ -1,0 +1,1047 @@
+/*
+ * EP06 互動元件（JointTableDemo、SentenceChainDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 Starlight 的 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * 聯合機率表：選到的列／欄和條件分佈用紫色（注意力）；「真實 − 如果獨立」比較大用藍色、比較小用珊瑚色。
+ * 一句話的機率：token 用黃色，示範數字的長條用藍色、EP00 實測的長條用珊瑚色（和本集的圖一樣），log 加總用綠色。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 線條用原色，文字用對比夠的那一階；深色模式（預設）直接用原色 */
+	--ep06-pick: var(--llm-attention, #7a6af0);
+	/* 深色模式的紫字：--sl-color-purple-high 太接近一般文字的顏色，混一點原色才看得出是紫色 */
+	--ep06-pick-text: color-mix(in srgb, var(--llm-attention, #7a6af0) 50%, var(--sl-color-purple-high, #d3cdff));
+	--ep06-more: var(--llm-vector, #4ea3f5);
+	--ep06-more-text: var(--sl-color-blue-high, #bcdcfb);
+	--ep06-less: var(--llm-output, #ff6f5e);
+	--ep06-less-text: var(--sl-color-red-high, #ffc4bc);
+	--ep06-demo-bar: var(--llm-vector, #4ea3f5);
+	--ep06-measured: var(--llm-output, #ff6f5e);
+	--ep06-measured-text: var(--llm-output, #ff6f5e);
+	--ep06-log: var(--llm-ffn, #22b88a);
+	--ep06-log-text: var(--sl-color-green-high, #a6ebd3);
+	--ep06-bad-text: var(--llm-output, #ff6f5e);
+	--ep06-ref: var(--llm-bar-neutral-edge, #8a96b1);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep06-pick: var(--llm-attention, #7a6af0);
+	--ep06-pick-text: var(--llm-attention-deep, #5b4bd6);
+	--ep06-more: var(--llm-vector-deep, #2b7fd6);
+	--ep06-more-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep06-less: var(--llm-output-deep, #e04e3e);
+	--ep06-less-text: var(--sl-color-red-high, #a8301f);
+	--ep06-demo-bar: var(--llm-vector-deep, #2b7fd6);
+	--ep06-measured: var(--llm-output-deep, #e04e3e);
+	--ep06-measured-text: var(--sl-color-red-high, #a8301f);
+	--ep06-log: var(--llm-ffn-deep, #139670);
+	--ep06-log-text: var(--sl-color-green-high, #0b654b);
+	--ep06-bad-text: var(--sl-color-red-high, #a8301f);
+	--ep06-ref: var(--llm-bar-neutral-edge, #7c879e);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.xs {
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.balance {
+	text-wrap: balance;
+}
+
+.pretty {
+	text-wrap: pretty;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* 「示範數字」小標籤 */
+.demoTag {
+	display: inline-block;
+	margin-inline-start: 0.4rem;
+	padding: 0 0.5rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+	vertical-align: 0.1em;
+	white-space: nowrap;
+}
+
+/* ---------- 按鈕 ---------- */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	min-width: 2.75rem;
+	padding: 0.25rem 0.8rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+/* 停用中（還是可以聚焦，讓螢幕閱讀器念出原因） */
+.chip[aria-disabled='true'] {
+	border-style: dashed;
+	color: var(--llm-ink-muted, #4f5a73);
+	cursor: not-allowed;
+}
+
+.chipMono {
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+/* 開關：前面畫一個勾選框 */
+.toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	text-align: start;
+}
+
+.toggle::before {
+	content: '';
+	flex: none;
+	width: 0.95rem;
+	height: 0.95rem;
+	border: 1.5px solid currentColor;
+	border-radius: 0.2rem;
+}
+
+.toggle[aria-pressed='true']::before {
+	background:
+		linear-gradient(45deg, transparent 45%, currentColor 45%, currentColor 60%, transparent 60%) no-repeat 0.12rem 0.3rem / 0.3rem 0.4rem,
+		linear-gradient(-45deg, transparent 42%, currentColor 42%, currentColor 57%, transparent 57%) no-repeat 0.3rem 0.12rem / 0.45rem 0.6rem;
+}
+
+.chip:focus-visible,
+.num:focus-visible,
+.slider:focus-visible,
+.headBtn:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* ---------- 滑桿與數字輸入 ---------- */
+.sliderHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	cursor: pointer;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.num {
+	width: 5.5rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-inline-start: 4px solid var(--sl-color-text-accent, #5b4bd6);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.numField {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+/* ---------- 算式區 ---------- */
+.calc {
+	display: grid;
+	gap: 0.5rem;
+	padding: 0.7rem 0.85rem 0.8rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+	min-width: 0;
+}
+
+.calcTitle {
+	font-weight: 700;
+	text-wrap: balance;
+}
+
+.formula {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.85rem, 3.4vw, 0.95rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.pickText {
+	color: var(--ep06-pick-text);
+	font-weight: 700;
+}
+
+/* ======================= 聯合機率表 ======================= */
+
+.tableWrap {
+	min-width: 0;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.joint {
+	width: 100%;
+	max-width: 34rem;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-variant-numeric: tabular-nums;
+	table-layout: fixed;
+}
+
+.joint caption {
+	margin-block-end: 0.35rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-align: start;
+	text-wrap: pretty;
+}
+
+.joint th,
+.joint td {
+	padding: 0.3rem 0.15rem;
+	border: 0;
+	border-block-end: 1px solid var(--llm-border, #e6dcc8);
+	text-align: center;
+	vertical-align: middle;
+}
+
+/* 邊際機率：和表格本體之間畫一條粗一點的線 */
+.joint .marginCol {
+	border-inline-start: 2px solid var(--llm-ink-muted, #4f5a73);
+}
+
+.joint tr.marginRow > * {
+	border-block-start: 2px solid var(--llm-ink-muted, #4f5a73);
+	border-block-end: 0;
+}
+
+.corner {
+	width: 4.4rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+	line-height: 1.25;
+}
+
+.marginHead {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.marginHead .mono {
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+/* 列名、欄名：可以按的按鈕 */
+.headBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.2rem;
+	min-width: 2.75rem;
+	min-height: 2.25rem;
+	padding: 0.1rem 0.5rem;
+	border: 1.5px solid var(--ep06-pick);
+	border-radius: 0.5rem;
+	background: color-mix(in srgb, var(--ep06-pick) 8%, transparent);
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-base, 1rem);
+	font-weight: 700;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 選到的列名、欄名：和 chip 按下去一樣（白字放在 #7a6af0 上對比不夠） */
+.headBtn[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+}
+
+.cell {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.9rem, 3.8vw, 1.0625rem);
+}
+
+.cellValue {
+	display: block;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+/* 選到的列或欄：淡紫底 */
+.picked {
+	background: color-mix(in srgb, var(--ep06-pick) 18%, transparent);
+}
+
+/* 選到的那一列（欄）的總和：條件機率要除以它 */
+.divisor {
+	background: color-mix(in srgb, var(--ep06-pick) 18%, transparent);
+}
+
+.divisor .cellValue {
+	display: inline-block;
+	padding: 0 0.3rem;
+	border: 2px solid var(--ep06-pick);
+	border-radius: 0.35rem;
+	color: var(--ep06-pick-text);
+}
+
+/* 如果獨立：每一格下面的小字是「真實 − 如果獨立」 */
+.cellDiff {
+	display: block;
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.more {
+	color: var(--ep06-more-text);
+}
+
+.less {
+	color: var(--ep06-less-text);
+}
+
+.same {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+/* 真實比較大／比較小的格子：底色淡淡標出來 */
+.cellMore {
+	box-shadow: inset 0 -3px 0 var(--ep06-more);
+}
+
+.cellLess {
+	box-shadow: inset 0 -3px 0 var(--ep06-less);
+}
+
+/* ---------- 條件分佈的長條 ---------- */
+.bars {
+	display: grid;
+	gap: 0.55rem;
+}
+
+.barRow {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr) max-content;
+	grid-template-areas:
+		'label track value'
+		'calc calc calc';
+	align-items: center;
+	gap: 0.1rem 0.6rem;
+}
+
+.barLabel {
+	grid-area: label;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.85rem, 3.5vw, 0.95rem);
+	white-space: nowrap;
+}
+
+.barValue {
+	grid-area: value;
+	min-width: 3.2rem;
+	color: var(--ep06-pick-text);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.0625rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	text-align: end;
+}
+
+.barCalc {
+	grid-area: calc;
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 0.9rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.barCalc > span {
+	white-space: nowrap;
+}
+
+.track {
+	grid-area: track;
+	position: relative;
+	display: block;
+	height: 1.25rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	/* 圓角不要太大：很短的長條才不會被裁成細線 */
+	border-radius: 0.3rem;
+	background: var(--llm-card, #ffffff);
+}
+
+.fill {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 0;
+	border-radius: 0.25rem;
+	background: var(--ep06-pick);
+	transition: width 0.25s ease;
+}
+
+/* 另一張表的值：虛線 */
+.marker {
+	position: absolute;
+	inset-block: -0.3rem;
+	width: 0;
+	margin-inline-start: -1px;
+	border-inline-start: 2.5px dashed var(--llm-ink, #1e2a44);
+	transition: left 0.25s ease;
+}
+
+.swFill,
+.swMarker {
+	flex: none;
+	display: inline-block;
+}
+
+.swFill {
+	width: 1.2rem;
+	height: 0.8rem;
+	border-radius: 0.15rem;
+	background: var(--ep06-pick);
+}
+
+.swMarker {
+	width: 0;
+	height: 1rem;
+	border-inline-start: 2.5px dashed var(--llm-ink, #1e2a44);
+}
+
+.swMore,
+.swLess {
+	flex: none;
+	display: inline-block;
+	width: 1.2rem;
+	height: 0;
+	border-block-start: 3px solid;
+}
+
+.swMore {
+	border-color: var(--ep06-more);
+}
+
+.swLess {
+	border-color: var(--ep06-less);
+}
+
+/* ---------- 圖例 ---------- */
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.2rem 1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+/* ======================= 一句話的機率 ======================= */
+
+/* token：黃色方塊 */
+.token {
+	display: inline-block;
+	min-width: 2.2em;
+	padding: 0.05rem 0.45rem;
+	border-radius: 0.4rem;
+	background: var(--llm-token, #ffc24a);
+	color: var(--llm-on-token, #1e2a44);
+	font-weight: 700;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.sentence {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.3rem;
+	font-size: clamp(1.05rem, 4.5vw, 1.25rem);
+}
+
+.sentenceTimes {
+	margin-inline-start: 0.25rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-sm, 0.875rem);
+	white-space: nowrap;
+}
+
+/* 量的是外框的寬度：夠寬時 5 步橫排、每一步一根直的長條；窄的時候（手機）每一步一列、長條橫放 */
+.stepsWrap {
+	container-type: inline-size;
+	min-width: 0;
+}
+
+.steps {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.rowLabels {
+	display: none;
+}
+
+.step {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr) max-content;
+	grid-template-areas:
+		'chip cond tag'
+		'bar bar bar'
+		'nums nums nums';
+	align-items: center;
+	gap: 0.3rem 0.5rem;
+	padding: 0.5rem 0.65rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.6rem;
+	min-width: 0;
+}
+
+.stepChip {
+	grid-area: chip;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	white-space: nowrap;
+}
+
+.stepT {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.stepCond {
+	grid-area: cond;
+	min-width: 0;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.85rem, 3.5vw, 0.9375rem);
+	line-height: 1.35;
+}
+
+.stepTag {
+	grid-area: tag;
+	justify-self: end;
+	padding: 0 0.45rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	white-space: nowrap;
+}
+
+.stepTagMeasured {
+	border-color: var(--ep06-measured);
+	color: var(--ep06-measured-text);
+	font-weight: 700;
+}
+
+.stepBar {
+	grid-area: bar;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+.vTrack {
+	position: relative;
+	display: block;
+	height: 1.1rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.3rem;
+	background: var(--llm-track, #f3ecdd);
+	overflow: hidden;
+}
+
+.vFill {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 0;
+	width: max(2px, var(--p));
+	background: var(--ep06-demo-bar);
+	transition:
+		width 0.25s ease,
+		height 0.25s ease;
+}
+
+.vFillMeasured {
+	background: var(--ep06-measured);
+}
+
+.stepP {
+	min-width: 3.4rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.0625rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	text-align: end;
+}
+
+.stepProd,
+.stepLog {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: 0.4rem;
+	min-width: 0;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.85rem, 3.5vw, 0.9375rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* 連乘到目前、log 加到目前：窄的時候排在同一列（放不下就折到下一列，log 靠右） */
+.stepNums {
+	grid-area: nums;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.1rem 0.75rem;
+	min-width: 0;
+}
+
+.stepLog {
+	margin-inline-start: auto;
+	justify-content: end;
+	color: var(--ep06-log-text);
+	font-weight: 700;
+}
+
+.sciWrap {
+	display: inline;
+}
+
+.inlineLabel {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+}
+
+@container (min-width: 36rem) {
+	/* 寬的時候：第 1 欄是每一列的名字，後面 5 欄是 5 步；每一步的內容用 subgrid 對齊到同一列 */
+	.steps {
+		grid-template-columns: max-content repeat(5, minmax(0, 1fr));
+		grid-template-rows: repeat(6, auto);
+		gap: 0 0.5rem;
+	}
+
+	.rowLabels,
+	.step {
+		grid-row: 1 / span 6;
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: none;
+		row-gap: 0.35rem;
+	}
+
+	.rowLabels {
+		align-items: center;
+		max-width: 5rem;
+		padding-block: 0.5rem 0.55rem;
+		color: var(--llm-ink-muted, #4f5a73);
+		font-size: var(--sl-text-xs, 0.8125rem);
+		font-weight: 700;
+		line-height: 1.3;
+		text-align: end;
+	}
+
+	.rowLabels > :nth-child(3) {
+		align-self: end;
+		padding-bottom: 0.2rem;
+	}
+
+	.step {
+		justify-items: center;
+		padding-inline: 0.2rem;
+		text-align: center;
+	}
+
+	/* t = 1 在 token 上面 */
+	.stepChip {
+		flex-direction: column;
+		gap: 0;
+	}
+
+	.step > * {
+		grid-area: auto;
+	}
+
+	/* 寬的時候兩個數字各占一列（subgrid 的第 5、6 列） */
+	.stepNums {
+		display: contents;
+	}
+
+	.stepLog {
+		margin-inline-start: 0;
+	}
+
+	.stepCond {
+		font-size: var(--sl-text-xs, 0.8125rem);
+	}
+
+	.stepTag {
+		justify-self: center;
+	}
+
+	/* 直的長條：數字在上面，長條從下往上長 */
+	.stepBar {
+		grid-template-columns: none;
+		grid-template-rows: max-content 6.5rem;
+		justify-items: center;
+		gap: 0.15rem;
+		width: 100%;
+	}
+
+	.stepP {
+		order: -1;
+		min-width: 0;
+		text-align: center;
+	}
+
+	.vTrack {
+		width: min(3.2rem, 70%);
+		height: 100%;
+	}
+
+	.vFill {
+		inset-block: auto 0;
+		inset-inline: 0;
+		width: auto;
+		height: max(2px, var(--p));
+	}
+
+	.stepProd,
+	.stepLog {
+		justify-content: center;
+		font-size: var(--sl-text-xs, 0.8125rem);
+		line-height: 1.35;
+	}
+
+	/* 每一列的名字已經寫在最左邊：格子裡的小標只留給螢幕閱讀器 */
+	.inlineLabel {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+	}
+}
+
+/* ---------- 連乘 vs log 加總 ---------- */
+.cols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+	align-items: start;
+	gap: 0.75rem;
+}
+
+.panel {
+	display: grid;
+	gap: 0.45rem;
+	align-content: start;
+	min-width: 0;
+	padding: 0.75rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.6rem;
+}
+
+.panelBad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 7%, transparent);
+}
+
+.panelGood {
+	border-color: var(--ep06-log);
+}
+
+.cardSub {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.code {
+	margin: 0;
+	padding: 0.45rem 0;
+	overflow-x: auto;
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.78rem, 3.3vw, 0.875rem);
+	line-height: 1.55;
+	white-space: pre;
+}
+
+.codeLine {
+	display: block;
+	min-width: max-content;
+	padding: 0 0.6rem 0 0.8rem;
+}
+
+.codeComment {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.bigValue {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: 1.3rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.bigValueBad {
+	color: var(--ep06-bad-text);
+}
+
+.bigValueLog {
+	color: var(--ep06-log-text);
+}
+
+.badge {
+	justify-self: start;
+	padding: 0.15rem 0.55rem;
+	border-radius: 0.35rem;
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	text-wrap: pretty;
+}
+
+.badgeBad {
+	border: 1.5px solid var(--llm-output-deep, #e04e3e);
+	background: var(--sl-color-red-low, #ffe6e2);
+	color: var(--sl-color-red-high, #a8301f);
+}
+
+.badgeMild {
+	border: 1.5px solid var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 18%, transparent);
+}
+
+/* 兩種詞序比一比 */
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.8rem, 3.3vw, 0.9375rem);
+}
+
+.table caption {
+	margin-block-end: 0.25rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+	text-align: start;
+}
+
+.table th,
+.table td {
+	padding: 0.2rem 0.45rem;
+	border: 0;
+	border-block-end: 1px solid var(--llm-border, #e6dcc8);
+	text-align: start;
+	vertical-align: baseline;
+}
+
+.table th {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+}
+
+.table td:first-child {
+	font-family: var(--__sl-font, sans-serif);
+}
+
+.tableNow td {
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 22%, transparent);
+	font-weight: 700;
+}
+
+.pyOut {
+	display: block;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+	overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.fill,
+	.marker,
+	.vFill {
+		transition: none;
+	}
+}

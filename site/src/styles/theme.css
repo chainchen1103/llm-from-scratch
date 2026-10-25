@@ -20,6 +20,14 @@
 		monospace;
 }
 
+/* 程式碼關掉連字：/=、!=、>=、== 要顯示成和鍵盤打出來的一樣，不要變成 ≠、≥ 這類符號。 */
+code,
+kbd,
+pre,
+.expressive-code {
+	font-variant-ligatures: none;
+}
+
 /* ---------- 語意色（兩種模式共用的原色） ---------- */
 :root {
 	--llm-token: #ffc24a; /* token 黃 */

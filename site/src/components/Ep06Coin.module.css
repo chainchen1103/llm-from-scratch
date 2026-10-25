@@ -1,0 +1,705 @@
+/*
+ * EP06 互動元件（CoinFlipDemo、LikelihoodDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 Starlight 的 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * 比例的折線與 L(p) 用藍色，log L(p) 用紫色；機率 0.5 與 p̂（最大值）的虛線用珊瑚色（和本集的圖一樣是紅色系）；
+ * 正面用黃色（token），反面用灰色外框。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 線條用原色，文字用對比夠的那一階；深色模式（預設）直接用原色 */
+	--ep06-curve: var(--llm-vector, #4ea3f5);
+	--ep06-curve-text: var(--sl-color-blue-high, #bcdcfb);
+	--ep06-log: var(--llm-attention, #7a6af0);
+	/* 深色模式的紫字：--sl-color-purple-high 太接近一般文字的顏色，混一點原色才看得出是紫色 */
+	--ep06-log-text: color-mix(in srgb, var(--llm-attention, #7a6af0) 50%, var(--sl-color-purple-high, #d3cdff));
+	--ep06-ref: var(--llm-output, #ff6f5e);
+	--ep06-ref-text: var(--llm-output, #ff6f5e);
+	--ep06-head: var(--llm-token, #ffc24a);
+	--ep06-tail: var(--llm-bar-neutral-edge, #8a96b1);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep06-curve: var(--llm-vector-deep, #2b7fd6);
+	--ep06-curve-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep06-log: var(--llm-attention, #7a6af0);
+	--ep06-log-text: var(--llm-attention-deep, #5b4bd6);
+	--ep06-ref: var(--llm-output-deep, #e04e3e);
+	--ep06-ref-text: var(--sl-color-red-high, #a8301f);
+	--ep06-head: var(--llm-token, #ffc24a);
+	--ep06-tail: var(--llm-bar-neutral-edge, #7c879e);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.balance {
+	text-wrap: balance;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* p̂：p 上面戴一頂帽子（不用組合字元，各種字型都排得正） */
+.hat {
+	position: relative;
+	display: inline-block;
+	font-style: italic;
+}
+
+.hat::after {
+	content: 'ˆ';
+	position: absolute;
+	left: 0.1em;
+	right: 0;
+	top: 0.1em;
+	font-size: 0.95em;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 1;
+	text-align: center;
+}
+
+.var {
+	font-style: italic;
+}
+
+/* ---------- 按鈕 ---------- */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	min-width: 2.75rem;
+	padding: 0.25rem 0.8rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chip:disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+
+.chipMono {
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+.chip:focus-visible,
+.num:focus-visible,
+.slider:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+.controlRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem 0.75rem;
+}
+
+.controlLabel {
+	font-weight: 700;
+}
+
+/* ---------- 滑桿 ---------- */
+.sliderHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	cursor: pointer;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* 兩個滑桿（n 與 k）並排；窄的時候上下排 */
+.sliderPair {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+	gap: 0.75rem 1.25rem;
+}
+
+/* ---------- 數字輸入 ---------- */
+.num {
+	width: 6.5rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-inline-start: 4px solid var(--sl-color-text-accent, #5b4bd6);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.numNarrow {
+	width: 5rem;
+}
+
+.numRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+/* ---------- 正面、反面 ---------- */
+.flips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.flip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border: 1.5px solid var(--ep06-tail);
+	border-radius: 50%;
+	background: transparent;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+	line-height: 1;
+}
+
+.flipHead {
+	border-color: color-mix(in srgb, var(--ep06-head) 70%, var(--llm-ink, #1e2a44));
+	background: var(--ep06-head);
+	color: var(--llm-on-token, #1e2a44);
+}
+
+/* 丟硬幣的那一排小一點：桌面寬度一排放得下 20 個 */
+.flipSmall {
+	width: 1.5rem;
+	height: 1.5rem;
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+/* 丟硬幣：還沒丟到的那幾次（比 n 後面）變淡 */
+.flipLater {
+	opacity: 0.28;
+}
+
+.flipsMore {
+	align-self: center;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+/* ---------- 座標圖 ---------- */
+.plotWide {
+	display: grid;
+	gap: 0.35rem;
+	width: 100%;
+	max-width: 44rem;
+	min-width: 0;
+}
+
+/* 兩張圖並排；手機寬度上下排 */
+.pair {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+	gap: 1rem 1.25rem;
+	align-items: start;
+}
+
+.panel {
+	display: grid;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.panelTitle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0 0.6rem;
+	font-weight: 700;
+}
+
+.panelFormula {
+	font-weight: 400;
+	white-space: nowrap;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 可以拖的圖：拖的時候不要捲動頁面（只加在這張 SVG 上） */
+.draggable {
+	touch-action: none;
+	cursor: pointer;
+}
+
+.grabbing {
+	cursor: grabbing;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 14px;
+}
+
+.plot .tickText {
+	font-size: 12.5px;
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.gridMinor {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+	opacity: 0.5;
+}
+
+.frameLine {
+	fill: none;
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisTitle {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+/* 機率 0.5、p̂（最大值）：珊瑚色虛線 */
+.refLine {
+	fill: none;
+	stroke: var(--ep06-ref);
+	stroke-width: 2px;
+	stroke-dasharray: 6 5;
+}
+
+.refText {
+	fill: var(--ep06-ref-text);
+	font-weight: 700;
+}
+
+/* 目前的 n、目前的 p：細細的直線 */
+.cursor {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+	opacity: 0.55;
+}
+
+.curve {
+	fill: none;
+	stroke: var(--ep06-curve);
+	stroke-width: 2.5px;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.curveLog {
+	stroke: var(--ep06-log);
+}
+
+/* 丟硬幣的折線比較密，細一點 */
+.curveThin {
+	stroke-width: 1.75px;
+}
+
+.dot {
+	fill: var(--ep06-curve);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.dotLog {
+	fill: var(--ep06-log);
+}
+
+.dotText {
+	fill: var(--ep06-curve-text);
+	font-weight: 700;
+}
+
+.dotTextLog {
+	fill: var(--ep06-log-text);
+}
+
+/* 拖的時候：外面一圈虛線 */
+.ring {
+	fill: none;
+	stroke: var(--sl-color-text-accent, #5b4bd6);
+	stroke-width: 2px;
+	stroke-dasharray: 3 3;
+}
+
+/* log L 是 −∞：在圖的下緣畫一個往下的三角形 */
+.infMark {
+	fill: var(--ep06-log);
+}
+
+.hint {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+/* ---------- 圖例 ---------- */
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.2rem 1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.swCurve,
+.swLog,
+.swRef {
+	flex: none;
+	display: inline-block;
+	width: 1.4rem;
+	height: 0;
+	border-block-start: 3px solid;
+}
+
+.swCurve {
+	border-color: var(--ep06-curve);
+}
+
+.swLog {
+	border-color: var(--ep06-log);
+}
+
+.swRef {
+	border-block-start: 2px dashed var(--ep06-ref);
+}
+
+/* ---------- 結果與表格 ---------- */
+.cols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+	align-items: start;
+	gap: 0.75rem 1rem;
+}
+
+.calc {
+	display: grid;
+	gap: 0.15rem;
+	padding: 0.6rem 0.85rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+	min-width: 0;
+}
+
+.calcTitle {
+	margin-block-end: 0.15rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+/* 一行算式：太長時只在 span 之間折行 */
+.deriv {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: 0.45em;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.85rem, 3.4vw, 1rem);
+}
+
+.deriv > span {
+	white-space: nowrap;
+}
+
+/* 名字和數字兩欄：數字對齊 */
+.kv {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	column-gap: 0.75em;
+	row-gap: 0.1rem;
+	align-items: baseline;
+}
+
+.kvName {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.kvValue {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: 0.4em;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.875rem, 3.4vw, 1rem);
+}
+
+.kvValue > span {
+	white-space: nowrap;
+}
+
+.result {
+	font-weight: 700;
+	color: var(--llm-ink, #1e2a44);
+}
+
+.big {
+	font-size: 1.15em;
+}
+
+.curveName {
+	color: var(--ep06-curve-text);
+	font-weight: 700;
+}
+
+.logName {
+	color: var(--ep06-log-text);
+	font-weight: 700;
+}
+
+.refName {
+	color: var(--ep06-ref-text);
+	font-weight: 700;
+}
+
+.status {
+	justify-self: start;
+	display: inline-block;
+	margin-top: 0.25rem;
+	padding: 0 0.6rem;
+	border-radius: 999px;
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+.statusTop {
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 25%, transparent);
+}
+
+.statusSide {
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 32%, transparent);
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.8rem, 3.2vw, 0.9375rem);
+}
+
+.table caption {
+	margin-block-end: 0.25rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+	text-align: start;
+}
+
+.table th,
+.table td {
+	padding: 0.15rem 0.45rem;
+	border: 0;
+	white-space: nowrap;
+	text-align: end;
+}
+
+.table th {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	border-block-end: 1.5px solid var(--llm-border, #e6dcc8);
+}
+
+.table tr.current td {
+	background: color-mix(in srgb, var(--ep06-curve) 22%, transparent);
+	font-weight: 700;
+}
+
+.table tr.current td:first-child {
+	border-start-start-radius: 0.3rem;
+	border-end-start-radius: 0.3rem;
+}
+
+.table tr.current td:last-child {
+	border-start-end-radius: 0.3rem;
+	border-end-end-radius: 0.3rem;
+}
+
+/* 手機寬度：表格的字和間距再小一點，四欄才放得下 */
+@media (max-width: 30rem) {
+	.table th,
+	.table td {
+		padding-inline: 0.25rem;
+	}
+}
