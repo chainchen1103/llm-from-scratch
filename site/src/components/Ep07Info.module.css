@@ -1,0 +1,723 @@
+/*
+ * EP07 互動元件（SurpriseEntropyDemo、PerplexityDemo）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 Starlight 的 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * 機率的長條用灰色（和 EP01 一樣），正在拖的那一根用珊瑚色；熵用藍色（和本集的圖一樣）；
+ * −ln p（每一格的損失）用綠色（EP06 的 log 機率）；token 用黃色，EP00 實測的標籤用珊瑚色。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 線條用原色，文字用對比夠的那一階；深色模式（預設）直接用原色 */
+	--ep07-bar: var(--llm-bar-neutral, #6b7896);
+	--ep07-bar-edge: var(--llm-bar-neutral-edge, #8a96b1);
+	--ep07-active: var(--llm-bar-highlight, #ff6f5e);
+	--ep07-active-edge: var(--llm-bar-highlight-edge, #ff9a8d);
+	--ep07-ent: var(--llm-vector, #4ea3f5);
+	--ep07-ent-edge: var(--llm-vector, #4ea3f5);
+	--ep07-ent-text: var(--sl-color-blue-high, #bcdcfb);
+	--ep07-nll: var(--llm-ffn, #22b88a);
+	--ep07-nll-text: var(--sl-color-green-high, #a6ebd3);
+	--ep07-measured: var(--llm-output, #ff6f5e);
+	--ep07-measured-text: var(--llm-output, #ff6f5e);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep07-bar: var(--llm-bar-neutral, #a9b2c5);
+	--ep07-bar-edge: var(--llm-bar-neutral-edge, #7c879e);
+	--ep07-active: var(--llm-bar-highlight, #ff6f5e);
+	--ep07-active-edge: var(--llm-bar-highlight-edge, #e04e3e);
+	--ep07-ent: var(--llm-vector, #4ea3f5);
+	--ep07-ent-edge: var(--llm-vector-deep, #2b7fd6);
+	--ep07-ent-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep07-nll: var(--llm-ffn-deep, #139670);
+	--ep07-nll-text: var(--sl-color-green-high, #0b654b);
+	--ep07-measured: var(--llm-output-deep, #e04e3e);
+	--ep07-measured-text: var(--sl-color-red-high, #a8301f);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.xs {
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.balance {
+	text-wrap: balance;
+}
+
+.pretty {
+	text-wrap: pretty;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* 「示範」小標籤 */
+.demoTag {
+	display: inline-block;
+	margin-inline-start: 0.4rem;
+	padding: 0 0.5rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+	vertical-align: 0.1em;
+	white-space: nowrap;
+}
+
+/* ---------- 按鈕 ---------- */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+}
+
+.controlRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem 0.6rem;
+}
+
+.controlLabel {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	min-height: 2.25rem;
+	min-width: 2.75rem;
+	padding: 0.25rem 0.8rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chipMono {
+	font-family: var(--__sl-font-mono, monospace);
+}
+
+.chip:focus-visible,
+.num:focus-visible,
+.pInput:focus-visible,
+.slider:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* ---------- 滑桿與數字輸入 ---------- */
+.sliderHeader {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+}
+
+.value {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.slider {
+	width: 100%;
+	min-height: 2rem;
+	margin: 0;
+	accent-color: var(--sl-color-text-accent, #5b4bd6);
+	cursor: pointer;
+}
+
+.scale {
+	display: flex;
+	justify-content: space-between;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.num {
+	width: 7rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-inline-start: 4px solid var(--sl-color-text-accent, #5b4bd6);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.numField {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+}
+
+/* 每一欄（每一格）的機率輸入框：窄的欄也放得下 0.293 */
+.pInput {
+	width: 100%;
+	max-width: 6rem;
+	min-height: 2.25rem;
+	padding: 0.15rem 0.15rem 0.15rem 0.35rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-block-end: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	border-radius: 0.45rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.875rem, 3.6vw, 1rem);
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+}
+
+.pInput:disabled {
+	border-style: dashed;
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+/* ---------- token、標籤 ---------- */
+
+/* token：黃色方塊 */
+.token {
+	display: inline-block;
+	min-width: 2.2em;
+	padding: 0.05rem 0.45rem;
+	border-radius: 0.4rem;
+	background: var(--llm-token, #ffc24a);
+	color: var(--llm-on-token, #1e2a44);
+	font-weight: 700;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.tag {
+	padding: 0 0.4rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	/* 一行時就是膠囊形；手機上「EP00 實測」折成兩行時是圓角方塊 */
+	border-radius: 0.6rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	line-height: 1.35;
+	text-align: center;
+	text-wrap: balance;
+}
+
+.tagMeasured {
+	border-color: var(--ep07-measured);
+	color: var(--ep07-measured-text);
+	font-weight: 700;
+}
+
+/* ---------- 座標圖（SVG） ---------- */
+.plotWrap {
+	min-width: 0;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 可以拖的圖：拖的時候不要捲動頁面（只加在這張 SVG 上） */
+.draggable {
+	touch-action: none;
+	cursor: pointer;
+}
+
+.dragV {
+	cursor: ns-resize;
+}
+
+.dragH {
+	cursor: ew-resize;
+}
+
+.grabbing {
+	cursor: grabbing;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 14px;
+}
+
+.plot .tickText {
+	font-size: 12.5px;
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.axisLine {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisTitle {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+/* 機率的長條 */
+.pBar {
+	fill: var(--ep07-bar);
+	stroke: var(--ep07-bar-edge);
+	stroke-width: 1.5px;
+	transition:
+		y 0.15s ease,
+		height 0.15s ease;
+}
+
+.pBarActive {
+	fill: var(--ep07-active);
+	stroke: var(--ep07-active-edge);
+}
+
+/* 長條頂端的把手：提示可以上下拖 */
+.grip {
+	fill: var(--llm-ink, #1e2a44);
+	opacity: 0.55;
+}
+
+.gripActive {
+	fill: var(--ep07-active-edge);
+	opacity: 1;
+}
+
+/* 機率是 0：底下一條虛線 */
+.zeroLine {
+	stroke: var(--ep07-bar-edge);
+	stroke-width: 2px;
+	stroke-dasharray: 4 3;
+}
+
+.pText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.hit {
+	fill: transparent;
+}
+
+/* ---------- 每一欄：token、機率、驚訝程度 ---------- */
+.colsGrid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.col {
+	display: grid;
+	justify-items: center;
+	align-content: start;
+	gap: 0.25rem;
+	min-width: 0;
+	text-align: center;
+}
+
+.surp {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.9375rem, 3.9vw, 1.0625rem);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.surpInf {
+	color: var(--ep07-measured-text);
+}
+
+.surpLabel {
+	margin-block-start: 0.1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.surpNote {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	line-height: 1.3;
+	text-wrap: balance;
+}
+
+.colLegend {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	text-wrap: pretty;
+}
+
+/* ---------- 熵：每一項疊起來的長條 ---------- */
+.hPanel {
+	display: grid;
+	gap: 0.45rem;
+	min-width: 0;
+	padding: 0.75rem 0.85rem 0.8rem;
+	border: 1.5px solid var(--ep07-ent-edge);
+	border-radius: 0.6rem;
+}
+
+.hHead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.1rem 1rem;
+}
+
+.hValue {
+	color: var(--ep07-ent-text);
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.3rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.hTrack {
+	position: relative;
+	height: 2rem;
+	border: 1.5px dashed var(--llm-ink-muted, #4f5a73);
+	border-radius: 0.35rem;
+	background: var(--llm-track, #f3ecdd);
+	overflow: hidden;
+}
+
+.seg {
+	position: absolute;
+	inset-block: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-inline-end: 2px solid var(--llm-card, #ffffff);
+	background: var(--ep07-ent);
+	color: var(--llm-on-token, #1e2a44);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	white-space: nowrap;
+	transition:
+		left 0.15s ease,
+		width 0.15s ease;
+}
+
+.hScale {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 0 0.75rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.hScaleMax {
+	margin-inline-start: auto;
+	text-align: end;
+}
+
+.formula {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.1rem 0.4rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: clamp(0.8125rem, 3.4vw, 0.9375rem);
+	font-variant-numeric: tabular-nums;
+}
+
+.formula > span {
+	white-space: nowrap;
+}
+
+.termName {
+	font-family: var(--__sl-font, sans-serif);
+	font-weight: 700;
+}
+
+.termSkip {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+}
+
+.entText {
+	color: var(--ep07-ent-text);
+	font-weight: 700;
+}
+
+/* ---------- 困惑度 ---------- */
+.nllBar {
+	fill: var(--ep07-nll);
+	transition: width 0.15s ease;
+}
+
+.nllDot {
+	fill: var(--ep07-nll);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2.5px;
+}
+
+.nllDotActive {
+	stroke: var(--sl-color-text-accent, #5b4bd6);
+	stroke-width: 3px;
+}
+
+.nllText {
+	fill: var(--ep07-nll-text);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.meanLine {
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 2px;
+	stroke-dasharray: 6 4;
+}
+
+.meanText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.tokenRect {
+	fill: var(--llm-token, #ffc24a);
+}
+
+.tokenText {
+	fill: var(--llm-on-token, #1e2a44);
+	font-weight: 700;
+}
+
+/* 每一格的控制：5 欄 */
+/* 每一欄的 token、標籤、輸入框各占一列（subgrid）：「EP00 實測」折成兩行時，輸入框還是對齊 */
+.cellsGrid {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	grid-template-rows: repeat(3, auto);
+	gap: 0.25rem 0.35rem;
+	min-width: 0;
+}
+
+.cell {
+	display: grid;
+	grid-row: span 3;
+	grid-template-rows: subgrid;
+	justify-items: center;
+	align-items: center;
+	min-width: 0;
+	text-align: center;
+}
+
+.cols {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+	align-items: stretch;
+	gap: 0.6rem;
+}
+
+.panel {
+	display: grid;
+	gap: 0.2rem;
+	align-content: start;
+	min-width: 0;
+	padding: 0.6rem 0.75rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.6rem;
+}
+
+.panelKey {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+}
+
+.panelLabel {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+.bigValue {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.35rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.bigNll {
+	color: var(--ep07-nll-text);
+}
+
+.panelSub {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	text-wrap: pretty;
+}
+
+.calc {
+	display: grid;
+	gap: 0.3rem;
+	padding: 0.65rem 0.85rem 0.7rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+	min-width: 0;
+}
+
+.calcTitle {
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+	text-wrap: balance;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pBar,
+	.seg,
+	.nllBar {
+		transition: none;
+	}
+}

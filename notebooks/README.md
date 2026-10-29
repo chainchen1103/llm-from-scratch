@@ -21,6 +21,8 @@ notebooks/
 │   └── ep05_chain_rule.ipynb
 ├── ep06/
 │   └── ep06_probability.ipynb
+├── ep07/
+│   └── ep07_information_theory.ipynb
 └── ...
 ```
 
