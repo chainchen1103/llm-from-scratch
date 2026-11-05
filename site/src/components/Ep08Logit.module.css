@@ -1,0 +1,842 @@
+/*
+ * EP08 互動元件（LossLandscapeDemo、LogisticTrainer）共用的樣式。
+ * 顏色來自 src/styles/theme.css 的 --llm-* 與 Starlight 的 --sl-* 變數，淺色／深色模式會自動切換；括號內是備援值。
+ * 梯度下降的路徑用紫色（和 EP07 的負梯度一樣）；等高線用灰色；谷底是黃色星星。
+ * 示範資料的「冷」用藍色、「熱」用珊瑚色；S 形曲線（模型）用紫色；損失用綠色（EP07 的 −ln p），準確率用藍色。
+ */
+
+.demo {
+	box-sizing: border-box;
+	display: grid;
+	gap: 1rem;
+	max-width: 100%;
+	margin-block: 1.5rem;
+	padding: clamp(1rem, 4vw, 1.5rem);
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 0.75rem;
+	background: var(--llm-card, #ffffff);
+	color: var(--llm-ink, #1e2a44);
+	font-size: var(--sl-text-base, 1rem);
+	line-height: 1.6;
+	/* 只有一欄，而且最寬就是卡片的寬度：裡面不能折行的長字串不會把整張卡片撐開 */
+	grid-template-columns: minmax(0, 1fr);
+
+	/* 線條用原色，文字用對比夠的那一階；深色模式（預設） */
+	--ep08-path: var(--llm-attention, #7a6af0);
+	--ep08-path-text: color-mix(in srgb, var(--llm-attention, #7a6af0) 50%, var(--sl-color-purple-high, #d3cdff));
+	--ep08-ghost: var(--llm-bar-neutral-edge, #8a96b1);
+	--ep08-contour: var(--llm-bar-neutral, #6b7896);
+	--ep08-contour-text: var(--llm-ink-muted, #9aa4b9);
+	--ep08-cold: var(--llm-vector, #4ea3f5);
+	--ep08-cold-text: var(--sl-color-blue-high, #bcdcfb);
+	--ep08-hot: var(--llm-output, #ff6f5e);
+	--ep08-hot-text: var(--sl-color-red-high, #ffc4bc);
+	--ep08-curve: var(--llm-attention, #7a6af0);
+	--ep08-curve-text: color-mix(in srgb, var(--llm-attention, #7a6af0) 50%, var(--sl-color-purple-high, #d3cdff));
+	--ep08-loss: var(--llm-ffn, #22b88a);
+	--ep08-loss-text: var(--sl-color-green-high, #a6ebd3);
+	--ep08-acc: var(--llm-vector, #4ea3f5);
+	--ep08-acc-text: var(--sl-color-blue-high, #bcdcfb);
+	--ep08-star: var(--llm-token, #ffc24a);
+}
+
+/* 淺色模式：白底上改用深一階的顏色，線條和文字才看得清楚 */
+:global(:root[data-theme='light']) .demo {
+	--ep08-path: var(--llm-attention-deep, #5b4bd6);
+	--ep08-path-text: var(--llm-attention-deep, #5b4bd6);
+	--ep08-ghost: var(--llm-bar-neutral-edge, #7c879e);
+	--ep08-contour: var(--llm-bar-neutral, #a9b2c5);
+	--ep08-contour-text: var(--llm-ink-muted, #4f5a73);
+	--ep08-cold: var(--llm-vector-deep, #2b7fd6);
+	--ep08-cold-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep08-hot: var(--llm-output-deep, #e04e3e);
+	--ep08-hot-text: var(--sl-color-red-high, #a8301f);
+	--ep08-curve: var(--llm-attention-deep, #5b4bd6);
+	--ep08-curve-text: var(--llm-attention-deep, #5b4bd6);
+	--ep08-loss: var(--llm-ffn-deep, #139670);
+	--ep08-loss-text: var(--sl-color-green-high, #0b654b);
+	--ep08-acc: var(--llm-vector-deep, #2b7fd6);
+	--ep08-acc-text: var(--sl-color-blue-high, #1a5a9e);
+	--ep08-star: var(--llm-token, #ffc24a);
+}
+
+.demo *,
+.demo *::before,
+.demo *::after {
+	box-sizing: border-box;
+}
+
+.demo p {
+	margin: 0;
+}
+
+.title {
+	font-weight: 700;
+}
+
+.muted {
+	color: var(--llm-ink-muted, #4f5a73);
+}
+
+.small {
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.xs {
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.mono {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.balance {
+	text-wrap: balance;
+}
+
+.pretty {
+	text-wrap: pretty;
+}
+
+/* 只給螢幕閱讀器念的文字 */
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.group {
+	display: grid;
+	gap: 0.4rem;
+}
+
+/* 「示範」小標籤 */
+.demoTag {
+	display: inline-block;
+	margin-inline-start: 0.4rem;
+	padding: 0 0.5rem;
+	border: 1px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 400;
+	line-height: 1.5;
+	vertical-align: 0.1em;
+	white-space: nowrap;
+}
+
+/* ---------- 按鈕與選項 ---------- */
+.controls {
+	display: grid;
+	gap: 0.6rem;
+}
+
+.controlRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.6rem;
+}
+
+.controlLabel {
+	min-width: 4.5rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.25rem;
+	min-width: 2.75rem;
+	padding: 0.25rem 0.8rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.4;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chip:disabled {
+	cursor: default;
+	opacity: 0.5;
+}
+
+/* 主要的動作按鈕：實心 */
+.action {
+	border-color: var(--sl-color-text-accent, #5b4bd6);
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-weight: 700;
+}
+
+.chip:focus-visible,
+.num:focus-visible {
+	outline: 3px solid var(--sl-color-text-accent, #5b4bd6);
+	outline-offset: 2px;
+}
+
+/* 起點的數字輸入 */
+.startForm {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.5rem;
+}
+
+.numField {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.varName {
+	font-style: italic;
+	font-weight: 700;
+}
+
+.num {
+	width: 5.5rem;
+	min-height: 2.25rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+	border: 1.5px solid var(--llm-border, #e6dcc8);
+	border-inline-start: 4px solid var(--ep08-path);
+	border-radius: 0.5rem;
+	background: var(--llm-track, #f3ecdd);
+	color: inherit;
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: var(--sl-text-base, 1rem);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 提示框 ---------- */
+.ok,
+.note,
+.bad,
+.plain {
+	padding: 0.5rem 0.75rem;
+	border-inline-start: 4px solid;
+	border-radius: 0.25rem;
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+.ok {
+	border-color: var(--llm-ffn, #22b88a);
+	background: color-mix(in srgb, var(--llm-ffn, #22b88a) 12%, transparent);
+}
+
+.note {
+	border-color: var(--llm-token, #ffc24a);
+	background: color-mix(in srgb, var(--llm-token, #ffc24a) 16%, transparent);
+}
+
+.bad {
+	border-color: var(--llm-output, #ff6f5e);
+	background: color-mix(in srgb, var(--llm-output, #ff6f5e) 12%, transparent);
+}
+
+.plain {
+	border-color: var(--llm-bar-neutral-edge, #7c879e);
+	background: var(--llm-track, #f3ecdd);
+}
+
+.tagWord {
+	font-weight: 700;
+}
+
+.hint {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	text-wrap: pretty;
+}
+
+/* 「發散」的標籤 */
+.divTag {
+	display: inline-block;
+	padding: 0 0.45rem;
+	border-radius: 0.35rem;
+	background: var(--llm-output, #ff6f5e);
+	color: var(--llm-on-token, #1e2a44);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* ---------- 圖 ---------- */
+.plotWrap {
+	min-width: 0;
+}
+
+.plot {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+	font-family: var(--__sl-font, sans-serif);
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 可以點、可以拖的圖：拖的時候不要捲動頁面（只加在這張 SVG 上） */
+.draggable {
+	touch-action: none;
+	cursor: crosshair;
+}
+
+.grabbing {
+	cursor: grabbing;
+}
+
+/* SVG 裡的字：viewBox 跟實際寬度一樣大，所以這裡的 px 就是畫面上的 px */
+.plot text {
+	font-size: 13px;
+}
+
+.plot .tickText {
+	font-size: 12px;
+}
+
+.plotBg {
+	fill: var(--llm-card, #ffffff);
+}
+
+.frameLine {
+	fill: none;
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+}
+
+.grid {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+}
+
+.gridMinor {
+	stroke: var(--llm-border, #e6dcc8);
+	stroke-width: 1px;
+	opacity: 0.5;
+}
+
+.axisLine {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1.25px;
+}
+
+.tickText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.axisTitle {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-weight: 700;
+}
+
+.halo {
+	paint-order: stroke;
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 4px;
+	stroke-linejoin: round;
+}
+
+/* ---------- 損失地形 ---------- */
+.contour {
+	fill: none;
+	stroke: var(--ep08-contour);
+	stroke-width: 1.2px;
+	stroke-linejoin: round;
+}
+
+.contourLow {
+	stroke-width: 1.6px;
+}
+
+.contourBg {
+	fill: var(--llm-card, #ffffff);
+}
+
+.contourText {
+	fill: var(--ep08-contour-text);
+	font-variant-numeric: tabular-nums;
+}
+
+.plot .contourText {
+	font-size: 11.5px;
+}
+
+.path {
+	fill: none;
+	stroke: var(--ep08-path);
+	stroke-width: 2.5px;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.pathDot {
+	fill: var(--ep08-path);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1px;
+}
+
+.ghostPath {
+	fill: none;
+	stroke: var(--ep08-ghost);
+	stroke-width: 1.75px;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+	opacity: 0.85;
+}
+
+.ghostDot {
+	fill: var(--ep08-ghost);
+}
+
+.startRing {
+	fill: var(--llm-card, #ffffff);
+	stroke: var(--ep08-path);
+	stroke-width: 2.5px;
+}
+
+.draftRing {
+	fill: none;
+	stroke: var(--ep08-path);
+	stroke-width: 2px;
+	stroke-dasharray: 3 3;
+}
+
+.nowDot {
+	fill: var(--ep08-path);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 2px;
+}
+
+.star {
+	fill: var(--ep08-star);
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.25px;
+	stroke-linejoin: round;
+}
+
+.starText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+}
+
+.pointText {
+	fill: var(--ep08-path-text);
+	font-weight: 700;
+}
+
+/* ---------- S 形曲線與資料 ---------- */
+.curve {
+	fill: none;
+	stroke: var(--ep08-curve);
+	stroke-width: 3px;
+	stroke-linejoin: round;
+}
+
+.prevCurve {
+	fill: none;
+	stroke: var(--ep08-ghost);
+	stroke-width: 1.5px;
+	stroke-dasharray: 5 4;
+}
+
+.halfLine {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1px;
+	stroke-dasharray: 2 3;
+}
+
+.cutLine {
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.5px;
+	stroke-dasharray: 6 4;
+}
+
+.cutText {
+	fill: var(--llm-ink, #1e2a44);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.dotCold {
+	fill: var(--ep08-cold);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1px;
+}
+
+.dotHot {
+	fill: var(--ep08-hot);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1px;
+}
+
+/* 猜錯的那一天：外面一圈 */
+.wrongRing {
+	fill: none;
+	stroke: var(--llm-ink, #1e2a44);
+	stroke-width: 1.75px;
+}
+
+.coldText {
+	fill: var(--ep08-cold-text);
+	font-weight: 700;
+}
+
+.hotText {
+	fill: var(--ep08-hot-text);
+	font-weight: 700;
+}
+
+.curveText {
+	fill: var(--ep08-curve-text);
+	font-weight: 700;
+}
+
+/* 損失與準確率的小圖 */
+.lossLine {
+	fill: none;
+	stroke: var(--ep08-loss);
+	stroke-width: 2.25px;
+	stroke-linejoin: round;
+}
+
+.accLine {
+	fill: none;
+	stroke: var(--ep08-acc);
+	stroke-width: 2px;
+	stroke-linejoin: round;
+}
+
+.otherLine {
+	fill: none;
+	stroke: var(--ep08-ghost);
+	stroke-width: 1.5px;
+	stroke-linejoin: round;
+	opacity: 0.9;
+}
+
+.otherText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.lossDot {
+	fill: var(--ep08-loss);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1.5px;
+}
+
+.accDot {
+	fill: var(--ep08-acc);
+	stroke: var(--llm-card, #ffffff);
+	stroke-width: 1.5px;
+}
+
+.refLine {
+	stroke: var(--llm-ink-muted, #4f5a73);
+	stroke-width: 1px;
+	stroke-dasharray: 2 3;
+}
+
+.refText {
+	fill: var(--llm-ink-muted, #4f5a73);
+	font-variant-numeric: tabular-nums;
+}
+
+.plot .refText,
+.plot .otherText {
+	font-size: 11.5px;
+}
+
+.lossText {
+	fill: var(--ep08-loss-text);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.accText {
+	fill: var(--ep08-acc-text);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 圖例 ---------- */
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.2rem 1rem;
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.sw {
+	flex: none;
+	display: inline-block;
+	width: 1.2rem;
+	height: 0;
+}
+
+.swContour {
+	border-block-start: 1.5px solid var(--ep08-contour);
+}
+
+.swPath {
+	border-block-start: 2.5px solid var(--ep08-path);
+}
+
+.swGhost {
+	border-block-start: 2px solid var(--ep08-ghost);
+}
+
+.swCurve {
+	border-block-start: 3px solid var(--ep08-curve);
+}
+
+.swPrev {
+	border-block-start: 1.5px dashed var(--ep08-ghost);
+}
+
+.swCut {
+	border-block-start: 1.5px dashed var(--llm-ink, #1e2a44);
+}
+
+.swDot {
+	width: 0.7rem;
+	height: 0.7rem;
+	border-radius: 50%;
+}
+
+.swCold {
+	background: var(--ep08-cold);
+}
+
+.swHot {
+	background: var(--ep08-hot);
+}
+
+.swWrong {
+	width: 0.85rem;
+	height: 0.85rem;
+	border-radius: 50%;
+	border: 1.75px solid var(--llm-ink, #1e2a44);
+}
+
+.swStar {
+	width: 0.95rem;
+	height: 0.95rem;
+	background: var(--ep08-star);
+	clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* ---------- 數字 ---------- */
+.stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+	gap: 0.5rem;
+}
+
+.stat {
+	display: grid;
+	align-content: start;
+	gap: 0.05rem;
+	min-width: 0;
+	padding: 0.5rem 0.7rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+}
+
+.statLabel {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+}
+
+.statValue {
+	font-family: var(--__sl-font-mono, monospace);
+	font-size: 1.2rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.statSub {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	text-wrap: pretty;
+}
+
+.lossValue {
+	color: var(--ep08-loss-text);
+}
+
+.accValue {
+	color: var(--ep08-acc-text);
+}
+
+.pathValue {
+	color: var(--ep08-path-text);
+}
+
+.stepCount {
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+/* 兩欄：寬的時候左右並排，窄的時候上下 */
+.pair {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+	gap: 1rem 1.5rem;
+	align-items: start;
+}
+
+.panel {
+	display: grid;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.panelTitle {
+	font-weight: 700;
+}
+
+/* 訓練迴圈的四步 */
+.loop {
+	display: grid;
+	gap: 0.35rem;
+	margin: 0;
+	padding: 0.65rem 0.85rem 0.7rem;
+	border-radius: 0.6rem;
+	background: var(--llm-track, #f3ecdd);
+	list-style: none;
+	min-width: 0;
+}
+
+.loopTitle {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-size: var(--sl-text-sm, 0.875rem);
+	font-weight: 700;
+}
+
+.loopItem {
+	display: grid;
+	grid-template-columns: 1.6rem minmax(0, 1fr);
+	gap: 0 0.35rem;
+	align-items: baseline;
+	margin: 0;
+}
+
+.loopNum {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.45rem;
+	height: 1.45rem;
+	border-radius: 50%;
+	background: var(--sl-color-text-accent, #5b4bd6);
+	color: var(--sl-color-text-invert, #ffffff);
+	font-size: var(--sl-text-xs, 0.8125rem);
+	font-weight: 700;
+	line-height: 1;
+}
+
+.loopBody {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.05rem;
+	min-width: 0;
+}
+
+.loopName {
+	font-weight: 700;
+	font-size: var(--sl-text-sm, 0.875rem);
+}
+
+/* 一行算式：太長時只在 span 之間折行 */
+.deriv {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: 0.45em;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.8rem, 3.3vw, 0.92rem);
+}
+
+.deriv > span {
+	white-space: nowrap;
+}
+
+/* 五個氣溫的機率：小表格 */
+.probeRow {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 0.2rem;
+	max-width: 22rem;
+	font-family: var(--__sl-font-mono, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: clamp(0.78rem, 3.2vw, 0.9rem);
+	text-align: center;
+}
+
+.probeHead {
+	color: var(--llm-ink-muted, #4f5a73);
+	font-family: var(--__sl-font, sans-serif);
+	font-size: var(--sl-text-xs, 0.8125rem);
+}
+
+.var {
+	font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.curve,
+	.path {
+		transition: none;
+	}
+}

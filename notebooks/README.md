@@ -23,6 +23,8 @@ notebooks/
 │   └── ep06_probability.ipynb
 ├── ep07/
 │   └── ep07_information_theory.ipynb
+├── ep08/
+│   └── ep08_gradient_descent.ipynb
 └── ...
 ```
 
